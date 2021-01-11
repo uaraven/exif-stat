@@ -6,6 +6,7 @@ require (
 	github.com/dsoprea/go-exif v0.0.0-20201216222538-db167117f483
 	github.com/dsoprea/go-exif/v3 v3.0.0-20201216222538-db167117f483 // indirect
 	github.com/dsoprea/go-logging v0.0.0-20200517223158-a10564966e9d
+	github.com/edsrzf/mmap-go v1.0.0
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/kr/fs v0.1.0 // indirect
 	github.com/kr/pretty v0.2.1 // indirect

@@ -23,8 +23,8 @@ func csvHeader() string {
 
 func (ei *ExifInfo) asCsv() string {
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("\"%s\",", ei.Make))
-	sb.WriteString(fmt.Sprintf("\"%s\",", ei.Model))
+	sb.WriteString(fmt.Sprintf("\"%s\",", strings.TrimSpace(ei.Make)))
+	sb.WriteString(fmt.Sprintf("\"%s\",", strings.TrimSpace(ei.Model)))
 	sb.WriteString(fmt.Sprintf("\"%s\",", ei.CreateTime.Format(time.RFC3339)))
 	sb.WriteString(fmt.Sprintf("\"%d\",", ei.Iso))
 	sb.WriteString(fmt.Sprintf("\"%.1f\",", ei.FNumber.AsFloat()))

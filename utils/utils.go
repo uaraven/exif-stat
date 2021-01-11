@@ -1,10 +1,13 @@
-package main
+package utils
 
 import (
 	"fmt"
 
 	"github.com/dsoprea/go-exif"
 )
+
+// ClearLine contains ASCII escape code to clear to the end of line
+const ClearLine = "\x1b[0K"
 
 func gcd(a, b uint32) uint32 {
 	for b != 0 {
@@ -32,7 +35,10 @@ type Rational struct {
 
 // Normalize normalizes a rational
 func (r Rational) Normalize() Rational {
-	if r.Denominator != 0 && r.Numerator != 0 && r.Denominator%r.Numerator == 0 || r.Numerator%r.Denominator == 0 {
+	if r.Numerator == 0 || r.Denominator == 0 {
+		return r
+	}
+	if r.Denominator%r.Numerator == 0 || r.Numerator%r.Denominator == 0 {
 		factor := gcd(r.Numerator, r.Denominator)
 		return Rational{
 			Numerator:   r.Numerator / factor,
@@ -125,8 +131,11 @@ func newSignedRational(r exif.SignedRational) SignedRational {
 
 // Normalize normalizes a rational
 func (r SignedRational) Normalize() SignedRational {
+	if r.Numerator == 0 || r.Denominator == 0 {
+		return r
+	}
 	n := abs(r.Numerator)
-	if r.Denominator != 0 && r.Numerator != 0 && r.Denominator%n == 0 || n%r.Denominator == 0 {
+	if r.Denominator%n == 0 || n%r.Denominator == 0 {
 		factor := abs(gcds(n, r.Denominator))
 		return SignedRational{
 			Numerator:   r.Numerator / factor,
@@ -175,4 +184,12 @@ func (r SignedRational) CompareTo(other SignedRational) int {
 	} else {
 		return 0
 	}
+}
+
+// Shorten the string if it's longer than predefined number of character by replacing part of it with ellipsis
+func Shorten(text string) string {
+	if len(text) > 60 {
+		return "…" + text[len(text)-61:]
+	}
+	return text
 }

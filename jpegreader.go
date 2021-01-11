@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/hex"
 	"fmt"
 	"strings"
 	"time"
@@ -61,6 +62,7 @@ const (
 	tagImageWidth           = 0xa002
 	tagImageHeight          = 0xa003
 	tagExposureMore         = 0xa402
+	tagMakerNote            = 0x927c
 )
 
 var exifFlashValues = map[uint]string{
@@ -171,6 +173,10 @@ var extractors = map[uint16]tagValueExtractor{
 			exifInfo.Height = uint32(tag.Value.([]uint16)[0])
 		}
 	},
+	tagMakerNote: func(tag exif.ExifTag, exifInfo *ExifInfo) {
+		fmt.Println(hex.EncodeToString(tag.ValueBytes))
+
+	},
 }
 
 func retrieveFlatExifData(exifData []byte) (exifTags []exif.ExifTag, err error) {
@@ -181,6 +187,10 @@ func retrieveFlatExifData(exifData []byte) (exifTags []exif.ExifTag, err error) 
 	}()
 
 	im := exif.NewIfdMappingWithStandard()
+
+	err = im.Add([]uint16{exif.IfdRootId}, 0x927c, "MakerNote")
+	log.PanicIf(err)
+
 	ti := exif.NewTagIndex()
 
 	_, index, err := exif.Collect(im, ti, exifData)
@@ -273,7 +283,7 @@ func ExtractExif(imageFilePath string) (exifInfo *ExifInfo, err error) {
 	}
 
 	for _, entry := range entries {
-		// fmt.Println(entry)
+		fmt.Println(entry)
 		extractor, ok := extractors[entry.TagId]
 		if ok {
 			extractor(entry, exifInfo)
