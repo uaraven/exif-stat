@@ -41,29 +41,6 @@ func (ei *ExifInfo) toString() string {
 	return sb.String()
 }
 
-func csvHeader() string {
-	return "Make,Model,CreateTime,Iso,FNumber,ExposureTime,FocalLength,FocalLength35,ExpComp,Flash,ExposureProgram,MPix"
-}
-
-func (ei *ExifInfo) asCsv() string {
-	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("\"%s\",", ei.Make))
-	sb.WriteString(fmt.Sprintf("\"%s\"", ei.Model))
-	sb.WriteString(fmt.Sprintf("\"%s\"", ei.CreateTime.Format(time.RFC3339)))
-	sb.WriteString(fmt.Sprintf("\"%d\"", ei.Iso))
-	sb.WriteString(fmt.Sprintf("\"%s\"", ei.FNumber.ToString()))
-	sb.WriteString(fmt.Sprintf("\"%s\"", ei.ExposureTime.ToString()))
-	sb.WriteString(fmt.Sprintf("\"%s\"", ei.FocalLength.ToString()))
-	sb.WriteString(fmt.Sprintf("\"%d\"", ei.FocalLength35))
-	sb.WriteString(fmt.Sprintf("\"%s\"", ei.ExposureCompensation.ToString()))
-	sb.WriteString(fmt.Sprintf("\"%s\"", ei.ExposureCompensation.ToString()))
-	sb.WriteString(fmt.Sprintf("\"%s\"", ei.Flash))
-	sb.WriteString(fmt.Sprintf("\"%s\"", ei.ExposureProgram))
-	mpix := float64(ei.Width*ei.Height) / 1000000.0
-	sb.WriteString(fmt.Sprintf("\"%.1f\"", mpix))
-	return sb.String()
-}
-
 type tagValueExtractor = func(tag exif.ExifTag, exifInfo *ExifInfo)
 
 const (
@@ -175,10 +152,24 @@ var extractors = map[uint16]tagValueExtractor{
 		exifInfo.ExposureCompensation = newSignedRational(tag.Value.([]exif.SignedRational)[0])
 	},
 	tagImageWidth: func(tag exif.ExifTag, exifInfo *ExifInfo) {
-		exifInfo.Width = tag.Value.([]uint32)[0]
+		switch tag.TagTypeId {
+		case exif.TypeLong:
+			exifInfo.Width = tag.Value.([]uint32)[0]
+		case exif.TypeSignedLong:
+			exifInfo.Width = uint32(tag.Value.([]int32)[0])
+		default:
+			exifInfo.Width = uint32(tag.Value.([]uint16)[0])
+		}
 	},
 	tagImageHeight: func(tag exif.ExifTag, exifInfo *ExifInfo) {
-		exifInfo.Height = tag.Value.([]uint32)[0]
+		switch tag.TagTypeId {
+		case exif.TypeLong:
+			exifInfo.Height = tag.Value.([]uint32)[0]
+		case exif.TypeSignedLong:
+			exifInfo.Height = uint32(tag.Value.([]int32)[0])
+		default:
+			exifInfo.Height = uint32(tag.Value.([]uint16)[0])
+		}
 	},
 }
 
@@ -261,7 +252,14 @@ func retrieveFlatExifData(exifData []byte) (exifTags []exif.ExifTag, err error) 
 }
 
 // ExtractExif parses image file with a given path and extracts exif information
-func ExtractExif(imageFilePath string) (*ExifInfo, error) {
+func ExtractExif(imageFilePath string) (exifInfo *ExifInfo, err error) {
+	exifInfo = &ExifInfo{}
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("%s", fmt.Sprint(r))
+			exifInfo = nil
+		}
+	}()
 	rawExif, err := exif.SearchFileAndExtractExif(imageFilePath)
 	if err != nil {
 		return nil, err
@@ -274,15 +272,14 @@ func ExtractExif(imageFilePath string) (*ExifInfo, error) {
 		}
 	}
 
-	var exifInfo ExifInfo
-
 	for _, entry := range entries {
+		// fmt.Println(entry)
 		extractor, ok := extractors[entry.TagId]
 		if ok {
-			extractor(entry, &exifInfo)
+			extractor(entry, exifInfo)
 		}
 
 	}
 
-	return &exifInfo, nil
+	return exifInfo, nil
 }

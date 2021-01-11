@@ -20,7 +20,7 @@ func isSupportedFile(path string) bool {
 func ListImages(path string) ([]string, error) {
 	var imageFiles []string
 	err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
-		if !info.IsDir() && isSupportedFile(path) {
+		if !info.IsDir() && isSupportedFile(path) && path[0] != '.' {
 			imageFiles = append(imageFiles, path)
 		}
 		return nil

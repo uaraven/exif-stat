@@ -24,6 +24,11 @@ func TestRational(t *testing.T) {
 		t.Errorf("ToString failed, expected: 3, actual: %s", rn.ToString())
 	}
 
+	s := Rational{0, 2}.ToString()
+	if s != "0" {
+		t.Errorf("ToString failed, expected: 0, actual: %s", s)
+	}
+
 	r1 := Rational{1, 3}
 	r2 := Rational{1, 4}
 	if r1.CompareTo(r2) <= 0 {
@@ -51,6 +56,11 @@ func TestSignedRational(t *testing.T) {
 	}
 	if rn.ToString() != "-1/3" {
 		t.Errorf("ToString failed, expected: -1/3, actual: %s", rn.ToString())
+	}
+
+	s := SignedRational{-0, 2}.ToString()
+	if s != "0" {
+		t.Errorf("ToString failed, expected: 0, actual: %s", s)
 	}
 
 	rn = SignedRational{-6, 2}

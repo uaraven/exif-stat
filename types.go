@@ -31,19 +31,22 @@ type Rational struct {
 }
 
 // Normalize normalizes a rational
-func (r *Rational) Normalize() Rational {
-	if r.Denominator%r.Numerator == 0 || r.Numerator%r.Denominator == 0 {
+func (r Rational) Normalize() Rational {
+	if r.Denominator != 0 && r.Numerator != 0 && r.Denominator%r.Numerator == 0 || r.Numerator%r.Denominator == 0 {
 		factor := gcd(r.Numerator, r.Denominator)
 		return Rational{
 			Numerator:   r.Numerator / factor,
 			Denominator: r.Denominator / factor,
 		}
 	}
-	return *r
+	return r
 }
 
 // ToString converts a rational value to string
-func (r *Rational) ToString() string {
+func (r Rational) ToString() string {
+	if r.Numerator == 0 {
+		return "0"
+	}
 	r1 := r.Normalize()
 	if r1.Numerator > r.Denominator {
 		var value = r1.Numerator / r1.Denominator
@@ -60,13 +63,13 @@ func (r *Rational) ToString() string {
 }
 
 // AsFloat converts a rational value to float
-func (r *Rational) AsFloat() float64 {
+func (r Rational) AsFloat() float64 {
 	return float64(r.Numerator) / float64(r.Denominator)
 }
 
 // CompareTo compares a rational to another rational and return 1 if this rational is larger than other,
 // -1 if it is smaller and 0 if they are equal
-func (r *Rational) CompareTo(other Rational) int {
+func (r Rational) CompareTo(other Rational) int {
 	r1 := r.Numerator * other.Denominator
 	r2 := other.Numerator * r.Denominator
 
@@ -121,21 +124,24 @@ func newSignedRational(r exif.SignedRational) SignedRational {
 }
 
 // Normalize normalizes a rational
-func (r *SignedRational) Normalize() SignedRational {
+func (r SignedRational) Normalize() SignedRational {
 	n := abs(r.Numerator)
-	if r.Denominator%n == 0 || n%r.Denominator == 0 {
+	if r.Denominator != 0 && r.Numerator != 0 && r.Denominator%n == 0 || n%r.Denominator == 0 {
 		factor := abs(gcds(n, r.Denominator))
 		return SignedRational{
 			Numerator:   r.Numerator / factor,
 			Denominator: r.Denominator / factor,
 		}
 	}
-	return *r
+	return r
 }
 
 // ToString converts a signed rational value to string
 // ToString converts a rational value to string
-func (r *SignedRational) ToString() string {
+func (r SignedRational) ToString() string {
+	if r.Numerator == 0 {
+		return "0"
+	}
 	r1 := r.Normalize()
 	if abs(r1.Numerator) > abs(r.Denominator) {
 		var value = r1.Numerator / r1.Denominator
@@ -152,13 +158,13 @@ func (r *SignedRational) ToString() string {
 }
 
 // AsFloat converts a signed rational value to float
-func (r *SignedRational) AsFloat() float64 {
+func (r SignedRational) AsFloat() float64 {
 	return float64(r.Numerator) / float64(r.Denominator)
 }
 
 // CompareTo compares a signed rational to another signed rational and return 1 if this rational is larger than other,
 // -1 if it is smaller and 0 if they are equal
-func (r *SignedRational) CompareTo(other SignedRational) int {
+func (r SignedRational) CompareTo(other SignedRational) int {
 	r1 := r.Numerator * other.Denominator
 	r2 := other.Numerator * r.Denominator
 

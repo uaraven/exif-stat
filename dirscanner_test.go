@@ -13,6 +13,7 @@ func TestListImages(t *testing.T) {
 	var expected = map[string]bool{
 		"test-data/DSC_0352.jpg":                       true,
 		"test-data/P1020297.JPG":                       true,
+		"test-data/_DSC0958.jpg":                       true,
 		"test-data/subdir/DSC_3455.JPG":                true,
 		"test-data/subdir/P1020630.jpg":                true,
 		"test-data/subdir/triple-nested/DSC_9068.jpg":  true,
