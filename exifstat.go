@@ -21,6 +21,12 @@ func main() {
 	if err != nil {
 		os.Exit(-1)
 	}
-	fmt.Printf("Parsing images in %s folder", options.FolderPath)
+	fmt.Printf("Searching for images in '%s'\n", options.FolderPath)
+
+	images, err := ListImages(options.FolderPath)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("Found %d image files\n", len(images))
 
 }

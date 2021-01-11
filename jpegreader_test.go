@@ -2,87 +2,19 @@ package main
 
 import (
 	"testing"
+	"time"
 )
 
-func TestRational(t *testing.T) {
-	r := Rational{2, 6}
-	rn := r.Normalize()
-	if rn.Numerator != 1 || rn.Denominator != 3 {
-		t.Errorf("Normalization failed, expected: 1/3, actual: %s", rn.ToString())
-	}
-	if rn.ToString() != "1/3" {
-		t.Errorf("ToString failed, expected: 1/3, actual: %s", rn.ToString())
+func verify(t *testing.T, exif *ExifInfo,
+	creationTime string, make string, model string,
+	iso uint16, fstop Rational, exposureTime Rational,
+	focalLength Rational, focalLength35 uint16,
+	exposureComp SignedRational, flash string, exposureProgram string) {
+
+	if exif.CreateTime.Format(time.RFC3339) != creationTime {
+		t.Errorf("Invalid creation time: '%s', expected '%s'", exif.CreateTime.Format(time.RFC3339), creationTime)
 	}
 
-	rn = Rational{6, 2}
-	rn = rn.Normalize()
-	if rn.Numerator != 3 || rn.Denominator != 1 {
-		t.Errorf("Normalization failed, expected: 3/1, actual: %s", rn.ToString())
-	}
-
-	if rn.ToString() != "3" {
-		t.Errorf("ToString failed, expected: 3, actual: %s", rn.ToString())
-	}
-
-	r1 := Rational{1, 3}
-	r2 := Rational{1, 4}
-	if r1.CompareTo(r2) <= 0 {
-		t.Errorf("CompareTo failed, %s must be > %s", r1.ToString(), r2.ToString())
-	}
-
-	r1 = Rational{1, 2}
-	r2 = Rational{4, 8}
-	if r1.CompareTo(r2) != 0 {
-		t.Errorf("CompareTo failed, %s must be == %s", r1.ToString(), r2.ToString())
-	}
-
-	r1 = Rational{1, 5}
-	r2 = Rational{2, 5}
-	if r1.CompareTo(r2) >= 0 {
-		t.Errorf("CompareTo failed, %s must be < %s", r1.ToString(), r2.ToString())
-	}
-}
-
-func TestSignedRational(t *testing.T) {
-	r := SignedRational{-2, 6}
-	rn := r.Normalize()
-	if rn.Numerator != -1 || rn.Denominator != 3 {
-		t.Errorf("Normalization failed, expected: -1/3, actual: %s", rn.ToString())
-	}
-	if rn.ToString() != "-1/3" {
-		t.Errorf("ToString failed, expected: -1/3, actual: %s", rn.ToString())
-	}
-
-	rn = SignedRational{-6, 2}
-	rn = rn.Normalize()
-	if rn.Numerator != -3 || rn.Denominator != 1 {
-		t.Errorf("Normalization failed, expected: -3/1, actual: %s", rn.ToString())
-	}
-
-	if rn.ToString() != "-3" {
-		t.Errorf("ToString failed, expected: -3, actual: %s", rn.ToString())
-	}
-
-	r1 := SignedRational{-1, 3}
-	r2 := SignedRational{-1, 4}
-	if r1.CompareTo(r2) >= 0 {
-		t.Errorf("CompareTo failed, %s must be > %s", r1.ToString(), r2.ToString())
-	}
-
-	r1 = SignedRational{-1, 2}
-	r2 = SignedRational{-4, 8}
-	if r1.CompareTo(r2) != 0 {
-		t.Errorf("CompareTo failed, %s must be == %s", r1.ToString(), r2.ToString())
-	}
-
-	r1 = SignedRational{-1, 5}
-	r2 = SignedRational{-2, 5}
-	if r1.CompareTo(r2) <= 0 {
-		t.Errorf("CompareTo failed, %s must be < %s", r1.ToString(), r2.ToString())
-	}
-}
-
-func verify(t *testing.T, exif *ExifInfo, make string, model string, fstop Rational) {
 	if exif.Make != make {
 		t.Errorf("Invalid make: '%s', expected '%s'", exif.Make, make)
 	}
@@ -90,6 +22,40 @@ func verify(t *testing.T, exif *ExifInfo, make string, model string, fstop Ratio
 	if exif.Model != model {
 		t.Errorf("Invalid model: '%s', expected '%s'", exif.Model, model)
 	}
+
+	if exif.Iso != iso {
+		t.Errorf("Invalid ISO: '%d', expected:'%d'", exif.Iso, iso)
+	}
+
+	if exif.FNumber.CompareTo(fstop) != 0 {
+		t.Errorf("Invalid F-Number: '%s', expected:'%s'", exif.FNumber.ToString(), fstop.ToString())
+	}
+
+	if exif.ExposureTime.CompareTo(exposureTime) != 0 {
+		t.Errorf("Invalid ExposureTime: '%s', expected:'%s'", exif.ExposureTime.ToString(), exposureTime.ToString())
+	}
+
+	if exif.FocalLength.CompareTo(focalLength) != 0 {
+		t.Errorf("Invalid Focal Length: '%s', expected:'%s'", exif.FocalLength.ToString(), focalLength.ToString())
+	}
+
+	if exif.FocalLength35 != focalLength35 {
+		t.Errorf("Invalid Focal Length 35mm: '%d', expected:'%d'", exif.FocalLength35, focalLength35)
+	}
+
+	if exif.ExposureCompensation.CompareTo(exposureComp) != 0 {
+		t.Errorf("Invalid Exposure Compensation: '%s', expected:'%s'", exif.ExposureCompensation.ToString(), exposureComp.ToString())
+	}
+
+	if exif.Flash != flash {
+		t.Errorf("Invalid Flash: '%s', expected:'%s'", exif.Flash, flash)
+	}
+
+	if exif.ExposureProgram != exposureProgram {
+		t.Errorf("Invalid ExposureProgram: '%s', expected:'%s'", exif.ExposureProgram, exposureProgram)
+	}
+
+	// CreateTime           string
 }
 
 func TestExtractExifNikonD50(t *testing.T) {
@@ -99,6 +65,21 @@ func TestExtractExifNikonD50(t *testing.T) {
 		t.Errorf("ExtractExif returned error: %v", err)
 	}
 
-	verify(t, exifInfo, "NIKON CORPORATION", "NIKON D50", NewRational(10, 1))
+	verify(t, exifInfo,
+		"2006-04-16T15:11:33Z",
+		"NIKON CORPORATION", "NIKON D50", 0, NewRational(10, 1), NewRational(1, 400), NewRational(18, 1), 27, SignedRational{-1, 3}, "No Flash", "Program AE")
+
+}
+
+func TestExtractExifGX1(t *testing.T) {
+	exifInfo, err := ExtractExif("test-data/subdir/P1020630.jpg")
+
+	if err != nil {
+		t.Errorf("ExtractExif returned error: %v", err)
+	}
+
+	verify(t, exifInfo,
+		"2019-06-08T08:19:37Z",
+		"Panasonic", "DMC-GX85", 250, NewRational(8, 1), NewRational(1, 800), NewRational(140, 1), 280, SignedRational{-33, 100}, "Off, Did not fire", "Aperture-priority AE")
 
 }
