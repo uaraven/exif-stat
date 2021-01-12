@@ -2,6 +2,7 @@ package exif
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -13,6 +14,8 @@ type marker struct {
 
 // IfdEntry is an exif tag
 type ifdEntry struct {
+	// Index of IFD
+	IfdIndex int
 	// Tag ID
 	TagID uint16
 	// Data Type
@@ -29,6 +32,7 @@ type ifdEntry struct {
 
 // Ifd represents image format descriptor
 type ifd struct {
+	Index      int
 	EntryCount uint16
 	IfdEntries []ifdEntry
 }
@@ -111,6 +115,9 @@ func (r Rational) ToString() string {
 		return "0"
 	}
 	r1 := r.Normalize()
+	if r1.Denominator == 1 {
+		return strconv.FormatUint(uint64(r1.Numerator), 10)
+	}
 	if r1.Numerator > r.Denominator {
 		var value = r1.Numerator / r1.Denominator
 		r1 = Rational{
@@ -196,6 +203,9 @@ func (r SignedRational) ToString() string {
 		return "0"
 	}
 	r1 := r.Normalize()
+	if r1.Denominator == 1 {
+		return strconv.FormatInt(int64(r1.Numerator), 10)
+	}
 	if abs(r1.Numerator) > abs(r.Denominator) {
 		var value = r1.Numerator / r1.Denominator
 		r1 = SignedRational{

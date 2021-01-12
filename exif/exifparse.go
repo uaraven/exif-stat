@@ -27,6 +27,8 @@ var (
 const (
 	// ExifDataMarker is an identifier of Exif Data marker
 	exifDataMarker = 0xFFE1
+	eoiDataMarker  = 0xFFD9
+	sosDataMarker  = 0xFFDA // star of stream marker
 
 	exifTagID       = 0x8769
 	makerNotesTagID = 0x927c
@@ -335,7 +337,7 @@ func readIfdEntry(file *File) (*ifdEntry, error) {
 	return &ifdEntry{ComponentCount: numComponents, TagID: tagNumber, DataType: dataFormat, Data: dataValue, Value: value, ValueBytes: rawData}, nil
 }
 
-func readIfd(file *File, offset int64) (*ifd, error) {
+func readIfd(file *File, offset int64, ifdIndex int) (*ifd, error) {
 	if offset > 0 {
 		pos, err := file.currentPosition()
 		if err != nil {
@@ -359,9 +361,10 @@ func readIfd(file *File, offset int64) (*ifd, error) {
 		if err != nil { // ignore the invalid entry
 			return nil, err
 		}
+		entry.IfdIndex = ifdIndex
 		entries = append(entries, *entry)
 	}
-	return &ifd{EntryCount: numEntries, IfdEntries: entries}, nil
+	return &ifd{Index: ifdIndex, EntryCount: numEntries, IfdEntries: entries}, nil
 }
 
 func entryToTag(parents []uint16, entry ifdEntry) Tag {
@@ -378,7 +381,7 @@ func entriesToTags(parentIDs []uint16, file *File, entries []ifdEntry) (Tags, er
 	tags := make([]Tag, 0)
 	for _, entry := range entries {
 		if entry.TagID == exifTagID {
-			exifTagEntries, err := readIfd(file, int64(entry.Value.([]uint32)[0]))
+			exifTagEntries, err := readIfd(file, int64(entry.Value.([]uint32)[0]), entry.IfdIndex)
 			if err != nil {
 				return nil, err
 			}
@@ -413,40 +416,64 @@ func entriesToTags(parentIDs []uint16, file *File, entries []ifdEntry) (Tags, er
 	return tags, nil
 }
 
-func readExifHeader(file *File, marker *marker) (*ifd, error) {
+func readExifHeader(file *File, marker *marker) error {
 	// check headers
 	file.seek(marker.Offset)
 	// examine exif header
 	var exifMagic uint32
 	err := file.Read(&exifMagic)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if exifMagic != 0x45786966 {
-		return nil, fmt.Errorf("Exif data does not contain valid exif marker")
+		return fmt.Errorf("Exif data does not contain valid exif marker")
 	}
 	var word uint16
 	err = file.Read(&word)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if word != 0 {
-		return nil, fmt.Errorf("Exif data does not contain valid exif marker")
+		return fmt.Errorf("Exif data does not contain valid exif marker")
 	}
 	tiffHeaderOffset, err := file.currentPosition()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	err = readTiffHeader(file)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	file.TiffHeaderOffset = tiffHeaderOffset
 
-	// we're at IFD0 and can start reading IFD
-	return readIfd(file, -1)
+	// we're at IFD0 and can start reading IFDs
+	return nil
+}
+
+func readIfds(file *File) ([]ifd, error) {
+	result := make([]ifd, 0)
+	index := 0
+	for {
+		ifd, err := readIfd(file, -1, index)
+		if err != nil {
+			return result, err
+		}
+		result = append(result, *ifd)
+		offset, err := file.readUint32() // read offset to next IFD
+		if err != nil {
+			return result, err
+		}
+		if offset == 0 {
+			return result, nil
+		}
+		_, err = file.seek(file.TiffHeaderOffset + int64(offset))
+		if err != nil { // most likely we're seeked past EOF
+			return result, nil
+		}
+		index++
+	}
 }
 
 func readTiffHeader(file *File) error {
@@ -487,6 +514,9 @@ func ReadExifTags(file *File) (Tags, error) {
 		}
 		if marker.Marker == exifDataMarker {
 			break
+		} else if marker.Marker == sosDataMarker {
+			// file does not contain proper exif
+			return make(Tags, 0), nil
 		} else {
 			file.seekRelative(int64(marker.Size - 2))
 		}
@@ -494,12 +524,18 @@ func ReadExifTags(file *File) (Tags, error) {
 	if marker.Marker != exifDataMarker {
 		return nil, fmt.Errorf("Cannot find exif data in %s", file.Path)
 	}
-	ifd, err := readExifHeader(file, marker)
+	err = readExifHeader(file, marker)
 	if err != nil {
 		return nil, err
 	}
+
+	ifds, err := readIfds(file)
+	if err != nil {
+		return nil, err
+	}
+
 	parent := make([]uint16, 0)
-	return entriesToTags(parent, file, ifd.IfdEntries)
+	return entriesToTags(parent, file, ifds[0].IfdEntries) // we're ignoring any IFD except for IFD0 for now
 }
 
 // TagsAsMap converts list of tags into a map of tag path -> tag

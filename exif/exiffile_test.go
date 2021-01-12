@@ -37,3 +37,19 @@ func TestReadingExifFile(t *testing.T) {
 		t.Fatalf("Failed to find 35mm focal length tag")
 	}
 }
+
+func TestReadingFileWithoutExif(t *testing.T) {
+	file, err := OpenExifFile("../test-data/fail/stack.jpg")
+	if err != nil {
+		t.Fatalf("Failed to open file: %v", err)
+	}
+	defer func() { file.Close() }()
+
+	ifds, err := ReadExifTags(file)
+	if err != nil {
+		t.Fatalf("Failed to open file: %v", err)
+	}
+	if len(ifds) != 0 {
+		t.Fatalf("Should have found no tags")
+	}
+}

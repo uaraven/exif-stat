@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/jessevdk/go-flags"
+	"github.com/uaraven/exif-stat/logger"
 )
 
 var (
@@ -14,6 +15,7 @@ var (
 			FolderPath string
 		} `positional-args:"yes" positional-arg-name:"folder-path" description:"Path to folder with image files" required:"yes"`
 		OutputFile string `short:"o" long:"output" description:"Name of the output CSV file" default:"exif-stats.csv"`
+		Verbose    bool   `short:"v" long:"verbose" description:"Output more informationm, including warnings"`
 	}{}
 )
 
@@ -40,19 +42,29 @@ func (ei *ExifInfo) asCsv() string {
 	return sb.String()
 }
 
+func (ei *ExifInfo) isValidExif() bool {
+	return len(ei.Make) > 0 && len(ei.Model) > 0 && ei.FNumber.Denominator != 0 && ei.ExposureTime.Denominator != 0 && ei.FocalLength.Denominator != 0 && len(ei.CreateTime) > 0
+}
+
 func main() {
 	_, err := flags.Parse(options)
 
 	if err != nil {
 		os.Exit(-1)
 	}
-	fmt.Printf("Searching for images in '%s'\n", options.Args.FolderPath)
+	if options.Verbose {
+		logger.SetVerbosityLevel(1)
+	} else {
+		logger.SetVerbosityLevel(0)
+	}
+
+	logger.Verbose(0, fmt.Sprintf("Searching for images in '%s'", options.Args.FolderPath))
 
 	images, err := ListImages(options.Args.FolderPath)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("Found %d image files\n", len(images))
+	logger.Verbose(0, fmt.Sprintf("Found %d image files", len(images)))
 
 	out, err := os.Create(options.OutputFile)
 	if err != nil {
@@ -61,14 +73,19 @@ func main() {
 	defer out.Close()
 	out.WriteString(csvHeader())
 
-	fmt.Printf("Writing data to '%s'\n", options.OutputFile)
+	logger.Info(fmt.Sprintf("Writing data to '%s'", options.OutputFile))
 	total := len(images)
+	if total == 0 {
+		total = 1 // to avoid div by zero later
+	}
 	for index, image := range images {
 		exif, err := ExtractExif(image)
 		if err != nil {
-			fmt.Printf("Failed to extract EXIF from '%s': %s\n", image, err)
+			logger.Verbose(1, fmt.Sprintf("\nFailed to extract EXIF from '%s': %s", image, err))
 		} else {
-			out.WriteString(exif.asCsv())
+			if exif.isValidExif() {
+				out.WriteString(exif.asCsv())
+			}
 			if index%100 == 0 { // update status every 100 images
 				fmt.Printf("%.1f%% %s\x1b[0K\r", float64(index)*100.0/float64(total), image)
 			}

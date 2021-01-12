@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/uaraven/exif-stat/exif"
+	"github.com/uaraven/exif-stat/logger"
 )
 
 // ExifInfo contains values of all the exif tag of interest
@@ -137,7 +138,7 @@ var extractors = map[string]tagValueExtractor{
 		if err == nil {
 			exifInfo.CreateTime = tm.Format(time.RFC3339)
 		} else {
-			exifInfo.CreateTime = "Invalid"
+			exifInfo.CreateTime = ""
 		}
 	},
 	tagIso: func(tag exif.Tag, exifInfo *ExifInfo) {
@@ -193,11 +194,18 @@ var extractors = map[string]tagValueExtractor{
 }
 
 func extractNikonIso(tag exif.Tag, exifInfo *ExifInfo) {
+	if tag.DataType != exif.TypeUnsignedShort { // sometimes there is TypeUndefined and all zeroes here
+		logger.Verbose(2, fmt.Sprintf("\nUnexpected data type in tag %v in exifinfo: %v", tag, exifInfo))
+		return
+	}
 	exifInfo.Iso = tag.Value.([]uint16)[1]
 }
 
 func parseExifFullTimestamp(timestamp string) (*time.Time, error) {
 	parts := strings.Split(timestamp, " ")
+	if len(parts) < 2 {
+		return nil, fmt.Errorf("Invalid timestamp %s", timestamp)
+	}
 	datestampValue, timestampValue := parts[0], parts[1]
 
 	// Normalize the separators.

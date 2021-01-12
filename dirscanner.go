@@ -26,7 +26,7 @@ func ListImages(path string) ([]string, error) {
 		if info.IsDir() {
 			fmt.Printf("%s%s\r", utils.Shorten(path), utils.ClearLine)
 		}
-		if !info.IsDir() && isSupportedFile(path) && path[0] != '.' {
+		if !info.IsDir() && isSupportedFile(path) && filepath.Base(path)[0] != '.' {
 			imageFiles = append(imageFiles, path)
 		}
 		return nil

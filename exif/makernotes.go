@@ -43,7 +43,7 @@ func nikonV3Reader(file *File, entry ifdEntry) (*ifd, error) {
 	if err != nil {
 		return nil, err
 	}
-	return readIfd(file, -1)
+	return readIfd(file, -1, entry.IfdIndex)
 }
 
 type makerNoteReader struct {

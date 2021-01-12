@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/edsrzf/mmap-go"
+	"github.com/uaraven/exif-stat/logger"
 )
 
 // File contains data required to read exif information from a file
@@ -45,7 +46,7 @@ func OpenExifFile(filepath string) (*File, error) {
 	}
 	word, err := file.readUint16()
 	if word != 0xFFD8 {
-		return nil, fmt.Errorf("Cannot find magic number in %s", filepath)
+		return nil, fmt.Errorf("Not a JPEG file? %s", filepath)
 	}
 
 	return file, nil
@@ -53,6 +54,15 @@ func OpenExifFile(filepath string) (*File, error) {
 
 func (file *File) readUint16() (uint16, error) {
 	var word uint16
+	err := binary.Read(file.Reader, file.Order, &word)
+	if err != nil {
+		return 0, err
+	}
+	return word, nil
+}
+
+func (file *File) readUint32() (uint32, error) {
+	var word uint32
 	err := binary.Read(file.Reader, file.Order, &word)
 	if err != nil {
 		return 0, err
@@ -87,6 +97,7 @@ func (file *File) Read(out interface{}) error {
 
 // Close closes the underlying file
 func (file *File) Close() {
+	logger.Verbose(2, fmt.Sprintf("Closing file %v", file.Path))
 	file.Data.Unmap()
 	file.File.Close()
 }
