@@ -14,7 +14,7 @@ import (
 type ExifInfo struct {
 	Make                 string
 	Model                string
-	CreateTime           time.Time
+	CreateTime           string
 	Iso                  uint16
 	FNumber              utils.Rational
 	ExposureTime         utils.Rational
@@ -42,6 +42,24 @@ func (ei *ExifInfo) toString() string {
 	return sb.String()
 }
 
+func (ei *ExifInfo) toMap() map[string]interface{} {
+	return map[string]interface{}{
+		"Make":                 ei.Make,
+		"Model":                ei.Model,
+		"CreateTime":           ei.CreateTime,
+		"Iso":                  ei.Iso,
+		"FNumber":              ei.FNumber.ToString(),
+		"ExposureTime":         ei.ExposureTime.ToString(),
+		"FocalLength":          ei.FocalLength.AsFloat(),
+		"FocalLength35":        ei.FocalLength35,
+		"Flash":                ei.Flash,
+		"ExposureProgram":      ei.ExposureProgram,
+		"ExposureCompensation": ei.ExposureCompensation.ToString(),
+		"Width":                ei.Width,
+		"Height":               ei.Height,
+	}
+}
+
 type tagValueExtractor = func(tag exif.Tag, exifInfo *ExifInfo)
 
 const (
@@ -62,7 +80,7 @@ const (
 	tagImageWidth           = "8769/a002"
 	tagImageHeight          = "8769/a003"
 	tagExposureMore         = "8769/a402"
-	tagNikonIso             = "927c/0002"
+	tagNikonIso             = "8769/927c/0002"
 )
 
 var exifFlashValues = map[uint]string{
@@ -118,9 +136,9 @@ var extractors = map[string]tagValueExtractor{
 	tagDateTimeOriginal: func(tag exif.Tag, exifInfo *ExifInfo) {
 		tm, err := parseExifFullTimestamp(tag.Value.(string))
 		if err == nil {
-			exifInfo.CreateTime = *tm
+			exifInfo.CreateTime = tm.Format(time.RFC3339)
 		} else {
-			exifInfo.CreateTime = time.Unix(0, 0)
+			exifInfo.CreateTime = "Invalid"
 		}
 	},
 	tagIso: func(tag exif.Tag, exifInfo *ExifInfo) {

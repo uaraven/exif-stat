@@ -7,6 +7,7 @@ require (
 	github.com/edsrzf/mmap-go v1.0.0
 	github.com/go-errors/errors v1.1.1 // indirect
 	github.com/golang/geo v0.0.0-20200319012246-673a6f80352d // indirect
+	github.com/google/go-cmp v0.5.4
 	github.com/jessevdk/go-flags v1.4.0
 	golang.org/x/net v0.0.0-20201021035429-f5854403a974 // indirect
 	gopkg.in/yaml.v2 v2.3.0 // indirect

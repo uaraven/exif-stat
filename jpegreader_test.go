@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"testing"
-	"time"
 
 	"github.com/uaraven/exif-stat/utils"
 )
@@ -13,8 +15,8 @@ func verify(t *testing.T, exif *ExifInfo,
 	focalLength utils.Rational, focalLength35 uint16,
 	exposureComp utils.SignedRational, flash string, exposureProgram string) {
 
-	if exif.CreateTime.Format(time.RFC3339) != creationTime {
-		t.Errorf("Invalid creation time: '%s', expected '%s'", exif.CreateTime.Format(time.RFC3339), creationTime)
+	if exif.CreateTime != creationTime {
+		t.Errorf("Invalid creation time: '%s', expected '%s'", exif.CreateTime, creationTime)
 	}
 
 	if exif.Make != make {
@@ -57,20 +59,46 @@ func verify(t *testing.T, exif *ExifInfo,
 		t.Errorf("Invalid ExposureProgram: '%s', expected:'%s'", exif.ExposureProgram, exposureProgram)
 	}
 
-	// CreateTime           string
 }
 
-func TestExtractExifNikonD50(t *testing.T) {
-	exifInfo, err := ExtractExif("test-data/scan/DSC_0352.jpg")
+type CameraTest struct {
+	Camera string                 `json:"Camera"`
+	Image  string                 `json:"Image"`
+	Exif   map[string]interface{} `json:"Exif"`
+}
 
-	if err != nil {
-		t.Errorf("ExtractExif returned error: %v", err)
+func compareExifMaps(t *testing.T, camera string, expected map[string]interface{}, actual map[string]interface{}) {
+	for k, ve := range expected {
+		va, ok := actual[k]
+		if !ok {
+			t.Fatalf("Camera %s. Actual exif does not contain %s", camera, k)
+		}
+		if fmt.Sprintf("%v", va) != fmt.Sprintf("%v", ve) {
+			t.Fatalf("Camera '%s', Tag '%s' Actual value '%v' != '%v'", camera, k, va, ve)
+		}
 	}
+}
 
-	verify(t, exifInfo,
-		"2006-04-16T15:11:33Z",
-		"NIKON CORPORATION", "NIKON D50", 0, utils.NewRational(10, 1), utils.NewRational(1, 400), utils.NewRational(18, 1), 27, utils.NewSignedRational(-1, 3), "No Flash", "Program AE")
-
+func TestCameras(t *testing.T) {
+	cameraJSON, err := ioutil.ReadFile("test-data/cameras/cameras.json")
+	if err != nil {
+		t.Logf("Failed to load cameras.json")
+		t.FailNow()
+	}
+	var cameras []CameraTest
+	err = json.Unmarshal([]byte(cameraJSON), &cameras)
+	if err != nil {
+		t.Logf("Failed to parse cameras.json")
+		t.FailNow()
+	}
+	for _, camera := range cameras {
+		filepath := "test-data/cameras/" + camera.Image
+		exifInfo, err := ExtractExif(filepath)
+		if err != nil {
+			t.Errorf("Failed to read exif from %s: %v", filepath, err)
+		}
+		compareExifMaps(t, camera.Camera, camera.Exif, exifInfo.toMap())
+	}
 }
 
 func TestExtractExifGX1(t *testing.T) {
