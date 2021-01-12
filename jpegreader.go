@@ -25,6 +25,7 @@ type ExifInfo struct {
 	ExposureCompensation exif.SignedRational
 	Width                uint32
 	Height               uint32
+	FileName             string
 }
 
 func (ei *ExifInfo) toString() string {
@@ -265,7 +266,9 @@ func ExtractExif(imageFilePath string) (*ExifInfo, error) {
 	}
 
 	tagMap := exif.TagsAsMap(tags)
-	exifInfo := &ExifInfo{}
+	exifInfo := &ExifInfo{
+		FileName: imageFilePath,
+	}
 
 	for path, extractor := range extractors {
 		tag, ok := tagMap[path]
