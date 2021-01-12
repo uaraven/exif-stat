@@ -1,4 +1,42 @@
 [{
+        "Camera": "Olympus C760UZ",
+        "Image": "Olympus/C760UZ.JPG",
+        "Exif": {
+            "Make": "OLYMPUS CORPORATION",
+            "Model": "C760UZ",
+            "CreateTime": "2004-07-08T20:39:36Z",
+            "Iso": 64,
+            "FNumber": 4.0,
+            "ExposureTime": "1/500",
+            "FocalLength": 6.3,
+            "FocalLength35": 0,
+            "Flash": "Off, Did not fire",
+            "ExposureProgram": "Creative (Slow speed)",
+            "ExposureCompensation": 0,
+            "Width": 640,
+            "Height": 480
+        }
+    },
+    {
+        "Camera": "KONICA MINOLTA",
+        "Image": "KonicaMinolta/DimageZ3.jpg",
+        "Exif": {
+            "Make": "KONICA MINOLTA",
+            "Model": "DiMAGE Z3",
+            "CreateTime": "2005-06-14T20:36:31Z",
+            "Iso": 50,
+            "FNumber": 4.5,
+            "ExposureTime": "1/100",
+            "FocalLength": 14.6484375,
+            "FocalLength35": 88,
+            "Flash": "On, Return detected",
+            "ExposureProgram": "Program AE",
+            "ExposureCompensation": 0,
+            "Width": 2272,
+            "Height": 1704
+        }
+    },
+    {
         "Camera": "Nikon D50",
         "Image": "Nikon/NikonD50.jpg",
         "Exif": {
@@ -16,8 +54,7 @@
             "Width": 2000,
             "Height": 3008
         }
-    },
-    {
+    }, {
         "Camera": "Nikon D90",
         "Image": "Nikon/NikonD90.JPG",
         "Exif": {
@@ -35,8 +72,7 @@
             "Width": 4288,
             "Height": 2848
         }
-    },
-    {
+    }, {
         "Camera": "Nikon D7000",
         "Image": "Nikon/NikonD7000.JPG",
         "Exif": {
@@ -54,8 +90,7 @@
             "Width": 4928,
             "Height": 3264
         }
-    },
-    {
+    }, {
         "Camera": "Nikon D750",
         "Image": "Nikon/NikonD750.jpg",
         "Exif": {
@@ -73,8 +108,7 @@
             "Width": 0,
             "Height": 0
         }
-    },
-    {
+    }, {
         "Camera": "Panasonic DMC-GX1",
         "Image": "Panasonic/PanasonicGX1.jpeg",
         "Exif": {
@@ -92,8 +126,7 @@
             "Width": 2950,
             "Height": 1876
         }
-    },
-    {
+    }, {
         "Camera": "Panasonic DMC-GX85",
         "Image": "Panasonic/PanasonicGX85.jpg",
         "Exif": {
@@ -111,8 +144,7 @@
             "Width": 0,
             "Height": 0
         }
-    },
-    {
+    }, {
         "Camera": "Fujifilm X-S10",
         "Image": "Fujifilm/Fuji-X-S10.jpg",
         "Exif": {
@@ -129,6 +161,25 @@
             "ExposureCompensation": 0,
             "Width": 4898,
             "Height": 3265
+        }
+    },
+    {
+        "Camera": "Canon R6",
+        "Image": "Canon/CanonR6.jpg",
+        "Exif": {
+            "Make": "Canon",
+            "Model": "Canon EOS R6",
+            "CreateTime": "2020-07-13T20:39:42Z",
+            "Iso": 200,
+            "FNumber": 4.5,
+            "ExposureTime": "1/640",
+            "FocalLength": 105.0,
+            "FocalLength35": 105.0,
+            "Flash": "No Flash",
+            "ExposureProgram": "Aperture-priority AE",
+            "ExposureCompensation": "-2/3",
+            "Width": 5472,
+            "Height": 3648
         }
     }
 ]

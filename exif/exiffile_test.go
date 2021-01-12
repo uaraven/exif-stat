@@ -53,3 +53,25 @@ func TestReadingFileWithoutExif(t *testing.T) {
 		t.Fatalf("Should have found no tags")
 	}
 }
+
+func TestReadingNonExistingFile(t *testing.T) {
+	file, err := OpenExifFile("../test-data/fail/no-file.jpg")
+	if err == nil {
+		t.Fatalf("Should have failed to open file")
+		return
+	}
+	file.Close()
+}
+
+func TestReadingEmptyFile(t *testing.T) {
+	file, err := OpenExifFile("../test-data/fail/empty.jpg")
+	if err == nil {
+		t.Fatalf("Should have failed to open file")
+		return
+	}
+	if file != nil {
+		t.Fatalf("Should have not returned the file")
+		file.Close()
+	}
+
+}

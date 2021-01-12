@@ -282,5 +282,6 @@ func ExtractExif(imageFilePath string) (*ExifInfo, error) {
 		}
 	}
 
+	exifInfo = postProcessExif(exifInfo)
 	return exifInfo, nil
 }

@@ -22,10 +22,17 @@ type File struct {
 }
 
 // OpenExifFile opens file for reading
-func OpenExifFile(filepath string) (*File, error) {
+func OpenExifFile(filepath string) (file *File, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Error(fmt.Sprintf("Failed to open file %s, Error: %v", filepath, r))
+			file = nil
+			err = fmt.Errorf("Failed to open file %s, Error: %v", filepath, r)
+		}
+	}()
 	f, err := os.Open(filepath)
 	defer func() {
-		if err != nil {
+		if err != nil && f != nil {
 			f.Close()
 		}
 	}()
@@ -37,7 +44,7 @@ func OpenExifFile(filepath string) (*File, error) {
 		return nil, err
 	}
 	reader := bytes.NewReader(data)
-	var file = &File{
+	file = &File{
 		Path:   filepath,
 		File:   f,
 		Data:   data,
@@ -97,7 +104,11 @@ func (file *File) Read(out interface{}) error {
 
 // Close closes the underlying file
 func (file *File) Close() {
-	logger.Verbose(2, fmt.Sprintf("Closing file %v", file.Path))
-	file.Data.Unmap()
-	file.File.Close()
+	if file != nil {
+		logger.Verbose(2, fmt.Sprintf("Closing file %v", file.Path))
+		file.Data.Unmap()
+		file.File.Close()
+	} else {
+		logger.Error("Close() called on nil file file %v")
+	}
 }
