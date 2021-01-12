@@ -1,13 +1,13 @@
 package main
 
 import (
-	"encoding/hex"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
-	"github.com/dsoprea/go-exif"
-	log "github.com/dsoprea/go-logging"
+	"github.com/uaraven/exif-stat/exif"
+	"github.com/uaraven/exif-stat/utils"
 )
 
 // ExifInfo contains values of all the exif tag of interest
@@ -16,13 +16,13 @@ type ExifInfo struct {
 	Model                string
 	CreateTime           time.Time
 	Iso                  uint16
-	FNumber              Rational
-	ExposureTime         Rational
-	FocalLength          Rational
+	FNumber              utils.Rational
+	ExposureTime         utils.Rational
+	FocalLength          utils.Rational
 	FocalLength35        uint16
 	Flash                string
 	ExposureProgram      string
-	ExposureCompensation SignedRational
+	ExposureCompensation utils.SignedRational
 	Width                uint32
 	Height               uint32
 }
@@ -42,27 +42,27 @@ func (ei *ExifInfo) toString() string {
 	return sb.String()
 }
 
-type tagValueExtractor = func(tag exif.ExifTag, exifInfo *ExifInfo)
+type tagValueExtractor = func(tag exif.Tag, exifInfo *ExifInfo)
 
 const (
-	tagMake                 = 0x010f
-	tagModel                = 0x0110
-	tagDateTimeOriginal     = 0x9003
-	tagIso                  = 0x8827
-	tagFNumber              = 0x829d
-	tagExposureTime         = 0x829a
-	tagFocalLength          = 0x920a
-	tagFocalLength35        = 0xa405
-	tagFlash                = 0x9209
-	tagExposureProgram      = 0x8822
-	tagExposureCompensation = 0x9204
-	tagMeteringMode         = 0x9207
-	tagMaxAperture          = 0x9205
-	tagOrientation          = 0x0112
-	tagImageWidth           = 0xa002
-	tagImageHeight          = 0xa003
-	tagExposureMore         = 0xa402
-	tagMakerNote            = 0x927c
+	tagMake                 = "010f"
+	tagModel                = "0110"
+	tagDateTimeOriginal     = "8769/9003"
+	tagIso                  = "8769/8827"
+	tagFNumber              = "8769/829d"
+	tagExposureTime         = "8769/829a"
+	tagFocalLength          = "8769/920a"
+	tagFocalLength35        = "8769/a405"
+	tagFlash                = "8769/9209"
+	tagExposureProgram      = "8769/8822"
+	tagExposureCompensation = "8769/9204"
+	tagMeteringMode         = "8769/9207"
+	tagMaxAperture          = "8769/9205"
+	tagOrientation          = "0112"
+	tagImageWidth           = "8769/a002"
+	tagImageHeight          = "8769/a003"
+	tagExposureMore         = "8769/a402"
+	tagNikonIso             = "927c/0002"
 )
 
 var exifFlashValues = map[uint]string{
@@ -108,187 +108,151 @@ var exifExposurePrograms = map[uint]string{
 	9: "Bulb",
 }
 
-var extractors = map[uint16]tagValueExtractor{
-	tagMake: func(tag exif.ExifTag, exifInfo *ExifInfo) {
+var extractors = map[string]tagValueExtractor{
+	tagMake: func(tag exif.Tag, exifInfo *ExifInfo) {
 		exifInfo.Make = tag.Value.(string)
 	},
-	tagModel: func(tag exif.ExifTag, exifInfo *ExifInfo) {
+	tagModel: func(tag exif.Tag, exifInfo *ExifInfo) {
 		exifInfo.Model = tag.Value.(string)
 	},
-	tagDateTimeOriginal: func(tag exif.ExifTag, exifInfo *ExifInfo) {
-		tm, err := exif.ParseExifFullTimestamp(tag.Value.(string))
+	tagDateTimeOriginal: func(tag exif.Tag, exifInfo *ExifInfo) {
+		tm, err := parseExifFullTimestamp(tag.Value.(string))
 		if err == nil {
-			exifInfo.CreateTime = tm
+			exifInfo.CreateTime = *tm
 		} else {
 			exifInfo.CreateTime = time.Unix(0, 0)
 		}
 	},
-	tagIso: func(tag exif.ExifTag, exifInfo *ExifInfo) {
+	tagIso: func(tag exif.Tag, exifInfo *ExifInfo) {
 		exifInfo.Iso = tag.Value.([]uint16)[0]
 	},
-	tagFNumber: func(tag exif.ExifTag, exifInfo *ExifInfo) {
-		exifInfo.FNumber = newRational(tag.Value.([]exif.Rational)[0])
+	tagFNumber: func(tag exif.Tag, exifInfo *ExifInfo) {
+		exifInfo.FNumber = tag.Value.([]utils.Rational)[0]
 	},
-	tagExposureTime: func(tag exif.ExifTag, exifInfo *ExifInfo) {
-		exifInfo.ExposureTime = newRational(tag.Value.([]exif.Rational)[0])
+	tagExposureTime: func(tag exif.Tag, exifInfo *ExifInfo) {
+		exifInfo.ExposureTime = tag.Value.([]utils.Rational)[0]
 	},
-	tagFocalLength: func(tag exif.ExifTag, exifInfo *ExifInfo) {
-		exifInfo.FocalLength = newRational(tag.Value.([]exif.Rational)[0])
+	tagFocalLength: func(tag exif.Tag, exifInfo *ExifInfo) {
+		exifInfo.FocalLength = tag.Value.([]utils.Rational)[0]
 	},
-	tagFocalLength35: func(tag exif.ExifTag, exifInfo *ExifInfo) {
+	tagFocalLength35: func(tag exif.Tag, exifInfo *ExifInfo) {
 		exifInfo.FocalLength35 = tag.Value.([]uint16)[0]
 	},
-	tagFlash: func(tag exif.ExifTag, exifInfo *ExifInfo) {
+	tagFlash: func(tag exif.Tag, exifInfo *ExifInfo) {
 		val, ok := exifFlashValues[uint(tag.Value.([]uint16)[0])]
 		if ok {
 			exifInfo.Flash = val
 		}
 	},
-	tagExposureProgram: func(tag exif.ExifTag, exifInfo *ExifInfo) {
+	tagExposureProgram: func(tag exif.Tag, exifInfo *ExifInfo) {
 		val, ok := exifExposurePrograms[uint(tag.Value.([]uint16)[0])]
 		if ok {
 			exifInfo.ExposureProgram = val
 		}
 	},
-	tagExposureCompensation: func(tag exif.ExifTag, exifInfo *ExifInfo) {
-		exifInfo.ExposureCompensation = newSignedRational(tag.Value.([]exif.SignedRational)[0])
+	tagExposureCompensation: func(tag exif.Tag, exifInfo *ExifInfo) {
+		exifInfo.ExposureCompensation = tag.Value.([]utils.SignedRational)[0]
 	},
-	tagImageWidth: func(tag exif.ExifTag, exifInfo *ExifInfo) {
-		switch tag.TagTypeId {
-		case exif.TypeLong:
+	tagImageWidth: func(tag exif.Tag, exifInfo *ExifInfo) {
+		switch tag.DataType {
+		case exif.UnsignedLong:
 			exifInfo.Width = tag.Value.([]uint32)[0]
-		case exif.TypeSignedLong:
+		case exif.SignedLong:
 			exifInfo.Width = uint32(tag.Value.([]int32)[0])
 		default:
 			exifInfo.Width = uint32(tag.Value.([]uint16)[0])
 		}
 	},
-	tagImageHeight: func(tag exif.ExifTag, exifInfo *ExifInfo) {
-		switch tag.TagTypeId {
-		case exif.TypeLong:
+	tagImageHeight: func(tag exif.Tag, exifInfo *ExifInfo) {
+		switch tag.DataType {
+		case exif.UnsignedLong:
 			exifInfo.Height = tag.Value.([]uint32)[0]
-		case exif.TypeSignedLong:
+		case exif.SignedLong:
 			exifInfo.Height = uint32(tag.Value.([]int32)[0])
 		default:
 			exifInfo.Height = uint32(tag.Value.([]uint16)[0])
 		}
 	},
-	tagMakerNote: func(tag exif.ExifTag, exifInfo *ExifInfo) {
-		fmt.Println(hex.EncodeToString(tag.ValueBytes))
-
-	},
 }
 
-func retrieveFlatExifData(exifData []byte) (exifTags []exif.ExifTag, err error) {
-	defer func() {
-		if state := recover(); state != nil {
-			err = log.Wrap(state.(error))
-		}
-	}()
-
-	im := exif.NewIfdMappingWithStandard()
-
-	err = im.Add([]uint16{exif.IfdRootId}, 0x927c, "MakerNote")
-	log.PanicIf(err)
-
-	ti := exif.NewTagIndex()
-
-	_, index, err := exif.Collect(im, ti, exifData)
-	log.PanicIf(err)
-
-	q := []*exif.Ifd{index.RootIfd}
-
-	exifTags = make([]exif.ExifTag, 0)
-
-	for len(q) > 0 {
-		var ifd *exif.Ifd
-		ifd, q = q[0], q[1:]
-
-		ti := exif.NewTagIndex()
-		for _, ite := range ifd.Entries {
-			tagName := ""
-
-			it, err := ti.Get(ifd.IfdPath, ite.TagId)
-			if err != nil {
-				// If it's a non-standard tag, just leave the name blank.
-				if log.Is(err, exif.ErrTagNotFound) != true {
-					// log.PanicIf(err)
-					tagName = "Unknown"
-				}
-			} else {
-				tagName = it.Name
-			}
-
-			value, err := ifd.TagValue(ite)
-			if err != nil {
-				if err == exif.ErrUnhandledUnknownTypedTag {
-					value = exif.UnparseableUnknownTagValuePlaceholder
-				} else {
-					value = "Unknown"
-					// continue
-					// log.Panic(err)
-				}
-			}
-
-			valueBytes, err := ifd.TagValueBytes(ite)
-			if err != nil && err != exif.ErrUnhandledUnknownTypedTag {
-				//log.Panic(err)
-			}
-
-			et := exif.ExifTag{
-				IfdPath:      ifd.IfdPath,
-				TagId:        ite.TagId,
-				TagName:      tagName,
-				TagTypeId:    ite.TagType,
-				TagTypeName:  exif.TypeNames[ite.TagType],
-				Value:        value,
-				ValueBytes:   valueBytes,
-				ChildIfdPath: ite.ChildIfdPath,
-			}
-
-			exifTags = append(exifTags, et)
-		}
-
-		for _, childIfd := range ifd.Children {
-			q = append(q, childIfd)
-		}
-
-		if ifd.NextIfd != nil {
-			q = append(q, ifd.NextIfd)
-		}
-	}
-
-	return exifTags, nil
+func extractNikonIso(tag exif.Tag, exifInfo *ExifInfo) {
+	exifInfo.Iso = tag.Value.([]uint16)[1]
 }
 
-// ExtractExif parses image file with a given path and extracts exif information
-func ExtractExif(imageFilePath string) (exifInfo *ExifInfo, err error) {
-	exifInfo = &ExifInfo{}
-	defer func() {
-		if r := recover(); r != nil {
-			err = fmt.Errorf("%s", fmt.Sprint(r))
-			exifInfo = nil
-		}
-	}()
-	rawExif, err := exif.SearchFileAndExtractExif(imageFilePath)
+func parseExifFullTimestamp(timestamp string) (*time.Time, error) {
+	parts := strings.Split(timestamp, " ")
+	datestampValue, timestampValue := parts[0], parts[1]
+
+	// Normalize the separators.
+	datestampValue = strings.ReplaceAll(datestampValue, "-", ":")
+	timestampValue = strings.ReplaceAll(timestampValue, "-", ":")
+
+	dateParts := strings.Split(datestampValue, ":")
+
+	year, err := strconv.ParseUint(dateParts[0], 10, 16)
 	if err != nil {
 		return nil, err
 	}
 
-	entries, err := retrieveFlatExifData(rawExif)
+	month, err := strconv.ParseUint(dateParts[1], 10, 8)
 	if err != nil {
-		if err == exif.ErrTagTypeNotValid || err == exif.ErrTagNotStandard {
-			return nil, err
-		}
+		return nil, err
 	}
 
-	for _, entry := range entries {
-		fmt.Println(entry)
-		extractor, ok := extractors[entry.TagId]
-		if ok {
-			extractor(entry, exifInfo)
-		}
+	day, err := strconv.ParseUint(dateParts[2], 10, 8)
+	if err != nil {
+		return nil, err
+	}
 
+	timeParts := strings.Split(timestampValue, ":")
+
+	hour, err := strconv.ParseUint(timeParts[0], 10, 8)
+	if err != nil {
+		return nil, err
+	}
+
+	minute, err := strconv.ParseUint(timeParts[1], 10, 8)
+	if err != nil {
+		return nil, err
+	}
+
+	second, err := strconv.ParseUint(timeParts[2], 10, 8)
+	if err != nil {
+		return nil, err
+	}
+
+	res := time.Date(int(year), time.Month(month), int(day), int(hour), int(minute), int(second), 0, time.UTC)
+	return &res, nil
+}
+
+// ExtractExif parses image file with a given path and extracts exif information
+func ExtractExif(imageFilePath string) (*ExifInfo, error) {
+
+	file, err := exif.OpenExifFile(imageFilePath)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { file.Close() }()
+
+	tags, err := exif.ReadExifTags(file)
+	if err != nil {
+		return nil, err
+	}
+
+	tagMap := exif.TagsAsMap(tags)
+	exifInfo := &ExifInfo{}
+
+	for path, extractor := range extractors {
+		tag, ok := tagMap[path]
+		if ok {
+			fmt.Println(tag.ToString())
+			extractor(tag, exifInfo)
+		}
+	}
+	if _, ok := tagMap[tagIso]; !ok { // no standard ISO tag
+		if tag, ok := tagMap[tagNikonIso]; ok { // but there is Nikon-specific ISO tag
+			extractNikonIso(tag, exifInfo)
+		}
 	}
 
 	return exifInfo, nil

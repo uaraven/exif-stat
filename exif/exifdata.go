@@ -15,16 +15,16 @@ var (
 	cameraMake           = "010f"
 	model                = "0110"
 	orientation          = "0112"
-	exposureTime         = "829a"
-	fNumber              = "929d"
-	iso                  = "8827"
-	createTime           = "9004"
-	focalLength          = "920a"
-	focalLength35        = "a405"
-	flash                = "9209"
-	exposureProgram      = "8822"
-	exposureCompensation = "9204"
-	nikonIso             = "927c/0002"
+	exposureTime         = "8769/829a"
+	fNumber              = "8769/929d"
+	iso                  = "8769/8827"
+	createTime           = "8769/9004"
+	focalLength          = "8769/920a"
+	focalLength35        = "8769/a405"
+	flash                = "8769/9209"
+	exposureProgram      = "8769/8822"
+	exposureCompensation = "8769/9204"
+	nikonIso             = "8769/927c/0002"
 )
 
 const (
@@ -35,29 +35,31 @@ const (
 	makerNotesTagID = 0x927c
 
 	// UnknownType is an unknown Tag type
-	UnknownType = iota
+	UnknownType = 0
 	// UnsignedByte is byte
-	UnsignedByte = iota
+	UnsignedByte = 1
 	// ASCIItring is sequence of bytes as an ascii string
-	ASCIItring = iota
+	ASCIItring = 2
 	// UnsignedShort is an uint16
-	UnsignedShort = iota
+	UnsignedShort = 3
 	// UnsignedLong is an uint32
-	UnsignedLong = iota
+	UnsignedLong = 4
 	// UnsignedRational is an {uint32, uint32}
-	UnsignedRational = iota
+	UnsignedRational = 5
 	// SignedByte is an int8
-	SignedByte = iota
+	SignedByte = 6
+	// Undefined is undefined type, treated as octets
+	Undefined = 7
 	// SignedShort is an int16
-	SignedShort = iota
+	SignedShort = 8
 	// SignedLong is an int32
-	SignedLong = iota
+	SignedLong = 9
 	// SignedRational is an {int32, int32}
-	SignedRational = iota
+	SignedRational = 10
 	// SingleFloat is a float32
-	SingleFloat = iota
+	SingleFloat = 11
 	// DoubleFloat is a float64
-	DoubleFloat = iota
+	DoubleFloat = 12
 )
 
 // limited set of known tag names that is used in exif-stat
@@ -129,8 +131,8 @@ func (ie IfdEntry) ToString() string {
 	return fmt.Sprintf("ID=%x Value=%v Bytes=%v", ie.TagID, ie.Value, ie.ValueBytes)
 }
 
-// ExifTag is a simplified
-type ExifTag struct {
+// Tag is a simplified representation of an Exif Tag
+type Tag struct {
 	ID       uint16
 	IDPath   []uint16
 	DataType int
@@ -138,7 +140,7 @@ type ExifTag struct {
 }
 
 // PathName creates path-line name from tag Id and parent ids
-func (tag ExifTag) PathName() string {
+func (tag Tag) PathName() string {
 	var sb strings.Builder
 	for _, p := range tag.IDPath {
 		sb.WriteString(fmt.Sprintf("%04x", p))
@@ -149,12 +151,12 @@ func (tag ExifTag) PathName() string {
 }
 
 // ToString returns a string representation of IfdEntry
-func (tag ExifTag) ToString() string {
+func (tag Tag) ToString() string {
 	return fmt.Sprintf("Path=%s ID=%x Value=%v", tag.PathName(), tag.ID, tag.Value)
 }
 
-// ExifTags is a slice of all Exif tags
-type ExifTags []ExifTag
+// Tags is a slice of all Exif tags
+type Tags []Tag
 
 // Ifd represents image format descriptor
 type Ifd struct {
@@ -422,14 +424,13 @@ func readIfd(file *File, offset int64) (*Ifd, error) {
 		if err != nil { // ignore the invalid entry
 			return nil, err
 		}
-		fmt.Println(entry.ToString())
 		entries = append(entries, *entry)
 	}
 	return &Ifd{EntryCount: numEntries, IfdEntries: entries}, nil
 }
 
-func entryToTag(parents []uint16, entry IfdEntry) ExifTag {
-	return ExifTag{
+func entryToTag(parents []uint16, entry IfdEntry) Tag {
+	return Tag{
 		ID:       entry.TagID,
 		IDPath:   parents,
 		DataType: int(entry.DataType),
@@ -437,8 +438,8 @@ func entryToTag(parents []uint16, entry IfdEntry) ExifTag {
 	}
 }
 
-func entriesToTags(parentIDs []uint16, file *File, entries []IfdEntry) (ExifTags, error) {
-	tags := make([]ExifTag, 0)
+func entriesToTags(parentIDs []uint16, file *File, entries []IfdEntry) (Tags, error) {
+	tags := make([]Tag, 0)
 	for _, entry := range entries {
 		if entry.TagID == exifTagID {
 			exifTagEntries, err := readIfd(file, int64(entry.Value.([]uint32)[0]))
@@ -539,7 +540,7 @@ func readTiffHeader(file *File) error {
 }
 
 // ReadExifTags parses file, extracts Ifds from it and parses ifds for all tags
-func ReadExifTags(file *File) (ExifTags, error) {
+func ReadExifTags(file *File) (Tags, error) {
 	// find exif marker in the file
 	var marker *Marker
 	var err error
@@ -563,4 +564,13 @@ func ReadExifTags(file *File) (ExifTags, error) {
 	}
 	parent := make([]uint16, 0)
 	return entriesToTags(parent, file, ifd.IfdEntries)
+}
+
+// TagsAsMap converts list of tags into a map of tag path -> tag
+func TagsAsMap(tags Tags) map[string]Tag {
+	result := make(map[string]Tag, 0)
+	for _, tag := range tags {
+		result[tag.PathName()] = tag
+	}
+	return result
 }
