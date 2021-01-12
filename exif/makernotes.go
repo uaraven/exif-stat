@@ -24,7 +24,7 @@ func nikonV3VariantDetector(data []byte) bool {
 	return true
 }
 
-func nikonV3Reader(file *File, entry IfdEntry) (*Ifd, error) {
+func nikonV3Reader(file *File, entry ifdEntry) (*ifd, error) {
 	mainTiffHeaderOffset := file.TiffHeaderOffset
 	mainOrder := file.Order
 	defer func() {
@@ -32,7 +32,7 @@ func nikonV3Reader(file *File, entry IfdEntry) (*Ifd, error) {
 		file.Order = mainOrder
 	}()
 
-	offset := file.TiffHeaderOffset + int64(entry.Data) + 10 // + 10 bytes of nikon signature
+	offset := file.TiffHeaderOffset + int64(entry.Data) + 10 // 10 bytes of nikon signature
 	_, err := file.seek(offset)
 	if err != nil {
 		return nil, err
@@ -48,7 +48,7 @@ func nikonV3Reader(file *File, entry IfdEntry) (*Ifd, error) {
 
 type makerNoteReader struct {
 	CanRead func([]byte) bool
-	Reader  func(*File, IfdEntry) (*Ifd, error)
+	Reader  func(*File, ifdEntry) (*ifd, error)
 }
 
 var makerNoteReaders = []makerNoteReader{
@@ -56,7 +56,7 @@ var makerNoteReaders = []makerNoteReader{
 	makerNoteReader{nikonV3VariantDetector, nikonV3Reader},
 }
 
-func readMakerNotes(file *File, entry IfdEntry) (*Ifd, error) {
+func readMakerNotes(file *File, entry ifdEntry) (*ifd, error) {
 	for _, reader := range makerNoteReaders {
 		if reader.CanRead(entry.ValueBytes) {
 			return reader.Reader(file, entry)

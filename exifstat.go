@@ -68,7 +68,9 @@ func main() {
 			fmt.Printf("Failed to extract EXIF from '%s': %s\n", image, err)
 		} else {
 			out.WriteString(exif.asCsv())
-			fmt.Printf("%.1f%% %s\x1b[0K\r", float64(index)*100.0/float64(total), image)
+			if index%100 == 0 { // update status every 100 images
+				fmt.Printf("%.1f%% %s\x1b[0K\r", float64(index)*100.0/float64(total), image)
+			}
 		}
 	}
 	fmt.Println("100% Done\x1b[0K")

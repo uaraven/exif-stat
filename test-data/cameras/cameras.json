@@ -1,6 +1,6 @@
 [{
         "Camera": "Nikon D50",
-        "Image": "NikonD50.jpg",
+        "Image": "Nikon/NikonD50.jpg",
         "Exif": {
             "Make": "NIKON CORPORATION",
             "Model": "NIKON D50",
@@ -18,8 +18,46 @@
         }
     },
     {
+        "Camera": "Nikon D90",
+        "Image": "Nikon/NikonD90.JPG",
+        "Exif": {
+            "Make": "NIKON CORPORATION",
+            "Model": "NIKON D90",
+            "CreateTime": "2012-08-06T10:47:03Z",
+            "Iso": 400,
+            "FNumber": 5.6,
+            "ExposureTime": "1/200",
+            "FocalLength": 200.0,
+            "FocalLength35": 300,
+            "Flash": "On, Return detected",
+            "ExposureProgram": "Shutter speed priority AE",
+            "ExposureCompensation": "0",
+            "Width": 4288,
+            "Height": 2848
+        }
+    },
+    {
+        "Camera": "Nikon D7000",
+        "Image": "Nikon/NikonD7000.JPG",
+        "Exif": {
+            "Make": "NIKON CORPORATION",
+            "Model": "NIKON D7000",
+            "CreateTime": "2012-08-22T11:47:38Z",
+            "Iso": 200,
+            "FNumber": 8.0,
+            "ExposureTime": "1/800",
+            "FocalLength": 120.0,
+            "FocalLength35": 180,
+            "Flash": "Off, Did not fire",
+            "ExposureProgram": "Aperture-priority AE",
+            "ExposureCompensation": "-2/3",
+            "Width": 4928,
+            "Height": 3264
+        }
+    },
+    {
         "Camera": "Nikon D750",
-        "Image": "NikonD750.jpg",
+        "Image": "Nikon/NikonD750.jpg",
         "Exif": {
             "Make": "NIKON CORPORATION",
             "Model": "NIKON D750",
@@ -34,6 +72,63 @@
             "ExposureCompensation": "0",
             "Width": 0,
             "Height": 0
+        }
+    },
+    {
+        "Camera": "Panasonic DMC-GX1",
+        "Image": "Panasonic/PanasonicGX1.jpeg",
+        "Exif": {
+            "Make": "Panasonic",
+            "Model": "DMC-GX1",
+            "CreateTime": "2014-07-01T18:27:28Z",
+            "Iso": 160,
+            "FNumber": 7.1,
+            "ExposureTime": "1/500",
+            "FocalLength": 14.0,
+            "FocalLength35": 29,
+            "Flash": "Off, Did not fire",
+            "ExposureProgram": "Program AE",
+            "ExposureCompensation": 0,
+            "Width": 2950,
+            "Height": 1876
+        }
+    },
+    {
+        "Camera": "Panasonic DMC-GX85",
+        "Image": "Panasonic/PanasonicGX85.jpg",
+        "Exif": {
+            "Make": "Panasonic",
+            "Model": "DMC-GX85",
+            "CreateTime": "2019-06-08T08:19:37Z",
+            "Iso": 250,
+            "FNumber": 8.0,
+            "ExposureTime": "1/800",
+            "FocalLength": 140.0,
+            "FocalLength35": 280,
+            "Flash": "Off, Did not fire",
+            "ExposureProgram": "Aperture-priority AE",
+            "ExposureCompensation": "-33/100",
+            "Width": 0,
+            "Height": 0
+        }
+    },
+    {
+        "Camera": "Fujifilm X-S10",
+        "Image": "Fujifilm/Fuji-X-S10.jpg",
+        "Exif": {
+            "Make": "FUJIFILM",
+            "Model": "X-S10",
+            "CreateTime": "2021-01-09T10:25:09Z",
+            "Iso": 800,
+            "FNumber": 4.5,
+            "ExposureTime": "1/58",
+            "FocalLength": 55.0,
+            "FocalLength35": 83,
+            "Flash": "No Flash",
+            "ExposureProgram": "Aperture-priority AE",
+            "ExposureCompensation": 0,
+            "Width": 4898,
+            "Height": 3265
         }
     }
 ]

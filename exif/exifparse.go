@@ -4,9 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"strings"
-
-	"github.com/uaraven/exif-stat/utils"
 )
 
 var (
@@ -34,32 +31,32 @@ const (
 	exifTagID       = 0x8769
 	makerNotesTagID = 0x927c
 
-	// UnknownType is an unknown Tag type
-	UnknownType = 0
-	// UnsignedByte is byte
-	UnsignedByte = 1
-	// ASCIItring is sequence of bytes as an ascii string
-	ASCIItring = 2
-	// UnsignedShort is an uint16
-	UnsignedShort = 3
-	// UnsignedLong is an uint32
-	UnsignedLong = 4
-	// UnsignedRational is an {uint32, uint32}
-	UnsignedRational = 5
-	// SignedByte is an int8
-	SignedByte = 6
-	// Undefined is undefined type, treated as octets
-	Undefined = 7
-	// SignedShort is an int16
-	SignedShort = 8
-	// SignedLong is an int32
-	SignedLong = 9
-	// SignedRational is an {int32, int32}
-	SignedRational = 10
-	// SingleFloat is a float32
-	SingleFloat = 11
-	// DoubleFloat is a float64
-	DoubleFloat = 12
+	// TypeUnknown is an unknown Tag type
+	TypeUnknown = 0
+	// TypeUnsignedByte is byte
+	TypeUnsignedByte = 1
+	// TypeASCIItring is sequence of bytes as an ascii string
+	TypeASCIItring = 2
+	// TypeUnsignedShort is an uint16
+	TypeUnsignedShort = 3
+	// TypeUnsignedLong is an uint32
+	TypeUnsignedLong = 4
+	// TypeUnsignedRational is an {uint32, uint32}
+	TypeUnsignedRational = 5
+	// TypeSignedByte is an int8
+	TypeSignedByte = 6
+	// TypeUndefined is undefined type, treated as octets
+	TypeUndefined = 7
+	// TypeSignedShort is an int16
+	TypeSignedShort = 8
+	// TypeSignedLong is an int32
+	TypeSignedLong = 9
+	// TypeSignedRational is an {int32, int32}
+	TypeSignedRational = 10
+	// TypeSingleFloat is a float32
+	TypeSingleFloat = 11
+	// TypeDoubleFloat is a float64
+	TypeDoubleFloat = 12
 )
 
 // limited set of known tag names that is used in exif-stat
@@ -81,88 +78,23 @@ var tagNames = map[string]string{
 	nikonIso:             "ISO",
 }
 
-// TagDataType contains data of the exif tag
-type TagDataType struct {
-	DataLength int
-	Reader     func(file *File, count uint32) (interface{}, []byte, error)
-}
+type tagReader func(file *File, count uint32) (interface{}, []byte, error)
 
 var (
-	dataFormatTypes = []TagDataType{
-		TagDataType{1, unsignedByteReader},     // unsigned byte
-		TagDataType{1, asciiStringReader},      // ascii string
-		TagDataType{2, unsignedShortReader},    // unsigned short
-		TagDataType{4, unsignedLongReader},     // unsigned long
-		TagDataType{8, unsignedRationalReader}, // unsigned rational
-		TagDataType{1, signedByteReader},       // signed byte
-		TagDataType{0, undefinedReader},        // undefined
-		TagDataType{2, signedShortReader},      // signed short
-		TagDataType{4, signedLongReader},       // signed long
-		TagDataType{8, signedRationalReader},   // signed rational
-		TagDataType{4, float32Reader},          // single float
-		TagDataType{8, float64Reader}}          // double float
+	dataFormatTypes = []tagReader{
+		unsignedByteReader,     // unsigned byte
+		asciiStringReader,      // ascii string
+		unsignedShortReader,    // unsigned short
+		unsignedLongReader,     // unsigned long
+		unsignedRationalReader, // unsigned rational
+		signedByteReader,       // signed byte
+		undefinedReader,        // undefined
+		signedShortReader,      // signed short
+		signedLongReader,       // signed long
+		signedRationalReader,   // signed rational
+		float32Reader,          // single float
+		float64Reader}          // double float
 )
-
-// Marker contains data of TIFF marker
-type Marker struct {
-	Marker uint16
-	Size   uint16
-	Offset int64
-}
-
-// IfdEntry is an exif tag
-type IfdEntry struct {
-	// Tag ID
-	TagID uint16
-	// Data Type
-	DataType uint16
-	// Number of components
-	ComponentCount uint32
-	// Raw data value (can be data or offset)
-	Data uint32
-	// Parsed and converted data
-	Value interface{}
-	// Actual data as slice of bytes
-	ValueBytes []byte
-}
-
-// ToString returns a string representation of IfdEntry
-func (ie IfdEntry) ToString() string {
-	return fmt.Sprintf("ID=%x Value=%v Bytes=%v", ie.TagID, ie.Value, ie.ValueBytes)
-}
-
-// Tag is a simplified representation of an Exif Tag
-type Tag struct {
-	ID       uint16
-	IDPath   []uint16
-	DataType int
-	Value    interface{}
-}
-
-// PathName creates path-line name from tag Id and parent ids
-func (tag Tag) PathName() string {
-	var sb strings.Builder
-	for _, p := range tag.IDPath {
-		sb.WriteString(fmt.Sprintf("%04x", p))
-		sb.WriteString("/")
-	}
-	sb.WriteString(fmt.Sprintf("%04x", tag.ID))
-	return sb.String()
-}
-
-// ToString returns a string representation of IfdEntry
-func (tag Tag) ToString() string {
-	return fmt.Sprintf("Path=%s ID=%x Value=%v", tag.PathName(), tag.ID, tag.Value)
-}
-
-// Tags is a slice of all Exif tags
-type Tags []Tag
-
-// Ifd represents image format descriptor
-type Ifd struct {
-	EntryCount uint16
-	IfdEntries []IfdEntry
-}
 
 func readRawData(file *File, count uint32, bytesInElement uint32) ([]byte, error) {
 	size := count * bytesInElement
@@ -293,9 +225,9 @@ func unsignedRationalReader(file *File, count uint32) (interface{}, []byte, erro
 	if err != nil {
 		return nil, nil, err
 	}
-	rationals := make([]utils.Rational, count)
+	rationals := make([]Rational, count)
 	for index := uint32(0); index < count; index += 2 {
-		rationals[index/2] = utils.NewRational(longs[index], longs[index+1])
+		rationals[index/2] = NewRational(longs[index], longs[index+1])
 	}
 	return rationals, rawData, nil
 }
@@ -310,9 +242,9 @@ func signedRationalReader(file *File, count uint32) (interface{}, []byte, error)
 	if err != nil {
 		return nil, nil, err
 	}
-	rationals := make([]utils.SignedRational, count)
+	rationals := make([]SignedRational, count)
 	for index := uint32(0); index < count; index += 2 {
-		rationals[index/2] = utils.NewSignedRational(longs[index], longs[index+1])
+		rationals[index/2] = NewSignedRational(longs[index], longs[index+1])
 	}
 	return rationals, rawData, nil
 }
@@ -343,7 +275,7 @@ func float32Reader(file *File, count uint32) (interface{}, []byte, error) {
 	return floats, rawData, nil
 }
 
-func readMarker(file *File) (*Marker, error) {
+func readMarker(file *File) (*marker, error) {
 	markerID, err := file.readUint16()
 	if err != nil {
 		return nil, err
@@ -356,14 +288,14 @@ func readMarker(file *File) (*Marker, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Marker{
+	return &marker{
 		Marker: markerID,
 		Size:   size,
 		Offset: pos,
 	}, nil
 }
 
-func readIfdEntry(file *File) (*IfdEntry, error) {
+func readIfdEntry(file *File) (*ifdEntry, error) {
 	var tagNumber uint16
 	err := file.Read(&tagNumber)
 	if err != nil {
@@ -396,14 +328,14 @@ func readIfdEntry(file *File) (*IfdEntry, error) {
 		return nil, err
 	}
 
-	value, rawData, err := dataFormatTypes[dataFormat-1].Reader(file, numComponents)
+	value, rawData, err := dataFormatTypes[dataFormat-1](file, numComponents)
 	if err != nil {
 		return nil, err
 	}
-	return &IfdEntry{ComponentCount: numComponents, TagID: tagNumber, DataType: dataFormat, Data: dataValue, Value: value, ValueBytes: rawData}, nil
+	return &ifdEntry{ComponentCount: numComponents, TagID: tagNumber, DataType: dataFormat, Data: dataValue, Value: value, ValueBytes: rawData}, nil
 }
 
-func readIfd(file *File, offset int64) (*Ifd, error) {
+func readIfd(file *File, offset int64) (*ifd, error) {
 	if offset > 0 {
 		pos, err := file.currentPosition()
 		if err != nil {
@@ -421,7 +353,7 @@ func readIfd(file *File, offset int64) (*Ifd, error) {
 	if err != nil {
 		return nil, err
 	}
-	entries := make([]IfdEntry, 0)
+	entries := make([]ifdEntry, 0)
 	for index := uint16(0); index < numEntries; index++ {
 		entry, err := readIfdEntry(file)
 		if err != nil { // ignore the invalid entry
@@ -429,19 +361,20 @@ func readIfd(file *File, offset int64) (*Ifd, error) {
 		}
 		entries = append(entries, *entry)
 	}
-	return &Ifd{EntryCount: numEntries, IfdEntries: entries}, nil
+	return &ifd{EntryCount: numEntries, IfdEntries: entries}, nil
 }
 
-func entryToTag(parents []uint16, entry IfdEntry) Tag {
+func entryToTag(parents []uint16, entry ifdEntry) Tag {
 	return Tag{
 		ID:       entry.TagID,
 		IDPath:   parents,
 		DataType: int(entry.DataType),
 		Value:    entry.Value,
+		RawData:  entry.ValueBytes,
 	}
 }
 
-func entriesToTags(parentIDs []uint16, file *File, entries []IfdEntry) (Tags, error) {
+func entriesToTags(parentIDs []uint16, file *File, entries []ifdEntry) (Tags, error) {
 	tags := make([]Tag, 0)
 	for _, entry := range entries {
 		if entry.TagID == exifTagID {
@@ -480,7 +413,7 @@ func entriesToTags(parentIDs []uint16, file *File, entries []IfdEntry) (Tags, er
 	return tags, nil
 }
 
-func readExifHeader(file *File, marker *Marker) (*Ifd, error) {
+func readExifHeader(file *File, marker *marker) (*ifd, error) {
 	// check headers
 	file.seek(marker.Offset)
 	// examine exif header
@@ -545,7 +478,7 @@ func readTiffHeader(file *File) error {
 // ReadExifTags parses file, extracts Ifds from it and parses ifds for all tags
 func ReadExifTags(file *File) (Tags, error) {
 	// find exif marker in the file
-	var marker *Marker
+	var marker *marker
 	var err error
 	for {
 		marker, err = readMarker(file)

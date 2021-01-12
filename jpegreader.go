@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/uaraven/exif-stat/exif"
-	"github.com/uaraven/exif-stat/utils"
 )
 
 // ExifInfo contains values of all the exif tag of interest
@@ -16,13 +15,13 @@ type ExifInfo struct {
 	Model                string
 	CreateTime           string
 	Iso                  uint16
-	FNumber              utils.Rational
-	ExposureTime         utils.Rational
-	FocalLength          utils.Rational
+	FNumber              exif.Rational
+	ExposureTime         exif.Rational
+	FocalLength          exif.Rational
 	FocalLength35        uint16
 	Flash                string
 	ExposureProgram      string
-	ExposureCompensation utils.SignedRational
+	ExposureCompensation exif.SignedRational
 	Width                uint32
 	Height               uint32
 }
@@ -48,13 +47,13 @@ func (ei *ExifInfo) toMap() map[string]interface{} {
 		"Model":                ei.Model,
 		"CreateTime":           ei.CreateTime,
 		"Iso":                  ei.Iso,
-		"FNumber":              ei.FNumber.ToString(),
+		"FNumber":              ei.FNumber.AsFloat(),
 		"ExposureTime":         ei.ExposureTime.ToString(),
 		"FocalLength":          ei.FocalLength.AsFloat(),
 		"FocalLength35":        ei.FocalLength35,
 		"Flash":                ei.Flash,
 		"ExposureProgram":      ei.ExposureProgram,
-		"ExposureCompensation": ei.ExposureCompensation.ToString(),
+		"ExposureCompensation": ei.ExposureCompensation.Normalize().ToString(),
 		"Width":                ei.Width,
 		"Height":               ei.Height,
 	}
@@ -145,13 +144,13 @@ var extractors = map[string]tagValueExtractor{
 		exifInfo.Iso = tag.Value.([]uint16)[0]
 	},
 	tagFNumber: func(tag exif.Tag, exifInfo *ExifInfo) {
-		exifInfo.FNumber = tag.Value.([]utils.Rational)[0]
+		exifInfo.FNumber = tag.Value.([]exif.Rational)[0]
 	},
 	tagExposureTime: func(tag exif.Tag, exifInfo *ExifInfo) {
-		exifInfo.ExposureTime = tag.Value.([]utils.Rational)[0]
+		exifInfo.ExposureTime = tag.Value.([]exif.Rational)[0]
 	},
 	tagFocalLength: func(tag exif.Tag, exifInfo *ExifInfo) {
-		exifInfo.FocalLength = tag.Value.([]utils.Rational)[0]
+		exifInfo.FocalLength = tag.Value.([]exif.Rational)[0]
 	},
 	tagFocalLength35: func(tag exif.Tag, exifInfo *ExifInfo) {
 		exifInfo.FocalLength35 = tag.Value.([]uint16)[0]
@@ -169,13 +168,13 @@ var extractors = map[string]tagValueExtractor{
 		}
 	},
 	tagExposureCompensation: func(tag exif.Tag, exifInfo *ExifInfo) {
-		exifInfo.ExposureCompensation = tag.Value.([]utils.SignedRational)[0]
+		exifInfo.ExposureCompensation = tag.Value.([]exif.SignedRational)[0]
 	},
 	tagImageWidth: func(tag exif.Tag, exifInfo *ExifInfo) {
 		switch tag.DataType {
-		case exif.UnsignedLong:
+		case exif.TypeUnsignedLong:
 			exifInfo.Width = tag.Value.([]uint32)[0]
-		case exif.SignedLong:
+		case exif.TypeSignedLong:
 			exifInfo.Width = uint32(tag.Value.([]int32)[0])
 		default:
 			exifInfo.Width = uint32(tag.Value.([]uint16)[0])
@@ -183,9 +182,9 @@ var extractors = map[string]tagValueExtractor{
 	},
 	tagImageHeight: func(tag exif.Tag, exifInfo *ExifInfo) {
 		switch tag.DataType {
-		case exif.UnsignedLong:
+		case exif.TypeUnsignedLong:
 			exifInfo.Height = tag.Value.([]uint32)[0]
-		case exif.SignedLong:
+		case exif.TypeSignedLong:
 			exifInfo.Height = uint32(tag.Value.([]int32)[0])
 		default:
 			exifInfo.Height = uint32(tag.Value.([]uint16)[0])

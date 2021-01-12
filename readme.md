@@ -1,6 +1,6 @@
 # Exif-stat
 
-Extracts some metadata from iamge files and stores it in CSV file for additional analysis.
+Extracts some metadata from image files and stores it in CSV file for additional analysis.
 
 ## What it does?
 
@@ -18,11 +18,23 @@ Following information is extracted:
  - Exposure time
  - Focal length
  - Equivalent focal length for 35mm
- - Exposure compensation in EV
+ - Exposure compensation
  - Flash
  - ExposureProgram (PASM, etc.)
  
-## Limitations
+## Supported EXIF data
 
-Only standard EXIF tags are parsed, no vendor-specific tags (yet)
+Only standard EXIF tags are parsed. Of the vendor-specific tags only some Nikon tags are parsed to retrieve ISO value when it is not present in Exif IFD.
+
+## Tested cameras
+
+| Make      | Model    | Notes                                                |
+|:---------:|:---------|:-----------------------------------------------------|
+| Nikon     | D50      | No ISO in Exif IFD, retrieved from Nikon maker notes |
+| Nikon     | D90      |                                                      |
+| Nikon     | D7000    |                                                      |
+| Nikon     | D750     | Exif IFD does not contain image width or height tags |
+| Panasonic | DMC-GX1  |                                                      |
+| Panasonic | DMC-GX85 |                                                      |
+| Fujifilm  | X-S10    |                                                      |
 
