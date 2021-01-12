@@ -10,9 +10,10 @@ import (
 
 var (
 	options = &struct {
-		FolderPath string `short:"s" long:"src-folder" description:"Path to folder with image files" required:"true"`
+		Args struct {
+			FolderPath string
+		} `positional-args:"yes" positional-arg-name:"folder-path" description:"Path to folder with image files" required:"yes"`
 		OutputFile string `short:"o" long:"output" description:"Name of the output CSV file" default:"exif-stats.csv"`
-		Verbose    bool   `short:"v" long:"verbose" description:"Print more stuff"`
 	}{}
 )
 
@@ -45,9 +46,9 @@ func main() {
 	if err != nil {
 		os.Exit(-1)
 	}
-	fmt.Printf("Searching for images in '%s'\n", options.FolderPath)
+	fmt.Printf("Searching for images in '%s'\n", options.Args.FolderPath)
 
-	images, err := ListImages(options.FolderPath)
+	images, err := ListImages(options.Args.FolderPath)
 	if err != nil {
 		panic(err)
 	}

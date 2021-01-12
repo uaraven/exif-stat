@@ -3,8 +3,6 @@ package exif
 import (
 	"fmt"
 	"strings"
-
-	"github.com/dsoprea/go-exif"
 )
 
 type marker struct {
@@ -154,13 +152,6 @@ func NewRational(numerator uint32, denominator uint32) Rational {
 		Denominator: denominator}
 }
 
-func newRational(r exif.Rational) Rational {
-	return Rational{
-		Numerator:   r.Numerator,
-		Denominator: r.Denominator,
-	}
-}
-
 // SignedRational represents a rational value expressed as Numerator/Denominator
 type SignedRational struct {
 	Numerator   int32
@@ -179,13 +170,6 @@ func NewSignedRational(numerator int32, denominator int32) SignedRational {
 	return SignedRational{
 		Numerator:   numerator,
 		Denominator: denominator}
-}
-
-func newSignedRational(r exif.SignedRational) SignedRational {
-	return SignedRational{
-		Numerator:   r.Numerator,
-		Denominator: r.Denominator,
-	}
 }
 
 // Normalize normalizes a rational
