@@ -4,13 +4,10 @@ go 1.14
 
 require (
 	github.com/dsoprea/go-exif v0.0.0-20201216222538-db167117f483
-	github.com/dsoprea/go-exif/v3 v3.0.0-20201216222538-db167117f483 // indirect
-	github.com/dsoprea/go-logging v0.0.0-20200517223158-a10564966e9d
 	github.com/edsrzf/mmap-go v1.0.0
+	github.com/go-errors/errors v1.1.1 // indirect
+	github.com/golang/geo v0.0.0-20200319012246-673a6f80352d // indirect
 	github.com/jessevdk/go-flags v1.4.0
-	github.com/kr/fs v0.1.0 // indirect
-	github.com/kr/pretty v0.2.1 // indirect
-	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/tools/godep v0.0.0-20180126220526-ce0bfadeb516 // indirect
-	golang.org/x/tools v0.0.0-20210108195828-e2f9c7f1fc8e // indirect
+	golang.org/x/net v0.0.0-20201021035429-f5854403a974 // indirect
+	gopkg.in/yaml.v2 v2.3.0 // indirect
 )

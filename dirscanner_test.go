@@ -6,18 +6,18 @@ import (
 
 // TestListImages tests ligst images
 func TestListImages(t *testing.T) {
-	images, err := ListImages("test-data")
+	images, err := ListImages("test-data/scan")
 	if err != nil {
 		t.Errorf("ListImages returned error %s", err)
 	}
 	var expected = map[string]bool{
-		"test-data/DSC_0352.jpg":                       true,
-		"test-data/P1020297.JPG":                       true,
-		"test-data/_DSC0958.jpg":                       true,
-		"test-data/subdir/DSC_3455.JPG":                true,
-		"test-data/subdir/P1020630.jpg":                true,
-		"test-data/subdir/triple-nested/DSC_9068.jpg":  true,
-		"test-data/subdir/triple-nested/P1030129.jpeg": true,
+		"test-data/scan/DSC_0352.jpg":                       true,
+		"test-data/scan/P1020297.JPG":                       true,
+		"test-data/scan/_DSC0958.jpg":                       true,
+		"test-data/scan/subdir/DSC_3455.JPG":                true,
+		"test-data/scan/subdir/P1020630.jpg":                true,
+		"test-data/scan/subdir/triple-nested/DSC_9068.jpg":  true,
+		"test-data/scan/subdir/triple-nested/P1030129.jpeg": true,
 	}
 
 	for _, image := range images {

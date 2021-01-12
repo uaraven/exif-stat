@@ -245,7 +245,6 @@ func ExtractExif(imageFilePath string) (*ExifInfo, error) {
 	for path, extractor := range extractors {
 		tag, ok := tagMap[path]
 		if ok {
-			fmt.Println(tag.ToString())
 			extractor(tag, exifInfo)
 		}
 	}

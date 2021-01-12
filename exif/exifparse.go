@@ -196,6 +196,9 @@ func asciiStringReader(file *File, count uint32) (interface{}, []byte, error) {
 	if err != nil {
 		return nil, nil, err
 	}
+	if rawData[len(rawData)-1] == 0 {
+		rawData = rawData[:len(rawData)-1]
+	}
 	return string(rawData), rawData, nil
 }
 

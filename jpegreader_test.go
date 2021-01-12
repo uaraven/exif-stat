@@ -61,7 +61,7 @@ func verify(t *testing.T, exif *ExifInfo,
 }
 
 func TestExtractExifNikonD50(t *testing.T) {
-	exifInfo, err := ExtractExif("test-data/DSC_0352.jpg")
+	exifInfo, err := ExtractExif("test-data/scan/DSC_0352.jpg")
 
 	if err != nil {
 		t.Errorf("ExtractExif returned error: %v", err)
@@ -74,7 +74,7 @@ func TestExtractExifNikonD50(t *testing.T) {
 }
 
 func TestExtractExifGX1(t *testing.T) {
-	exifInfo, err := ExtractExif("test-data/subdir/P1020630.jpg")
+	exifInfo, err := ExtractExif("test-data/scan/subdir/P1020630.jpg")
 
 	if err != nil {
 		t.Errorf("ExtractExif returned error: %v", err)
