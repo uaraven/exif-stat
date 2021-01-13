@@ -37,4 +37,5 @@ Only standard EXIF tags are parsed. Of the vendor-specific tags only some Nikon 
 | Panasonic | DMC-GX1  |                                                      |
 | Panasonic | DMC-GX85 |                                                      |
 | Fujifilm  | X-S10    |                                                      |
+| Canon     | EOS R6   | No `FocalLengthIn35mm` tag present                   |
 
