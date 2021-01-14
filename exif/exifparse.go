@@ -81,7 +81,7 @@ var tagNames = map[string]string{
 	nikonIso:             "ISO",
 }
 
-type tagReader func(file *File, count uint32) (interface{}, []byte, error)
+type tagReader func(file File, count uint32) (interface{}, []byte, error)
 
 var (
 	dataFormatTypes = []tagReader{
@@ -99,7 +99,7 @@ var (
 		float64Reader}          // double float
 )
 
-func readRawData(file *File, count uint32, bytesInElement uint32) ([]byte, error) {
+func readRawData(file File, count uint32, bytesInElement uint32) ([]byte, error) {
 	size := count * bytesInElement
 	if size < 4 {
 		size = 4
@@ -116,7 +116,7 @@ func readRawData(file *File, count uint32, bytesInElement uint32) ([]byte, error
 		if err != nil {
 			return nil, err
 		}
-		_, err = file.seek(file.TiffHeaderOffset + int64(offset))
+		_, err = file.seek(file.GetTiffHeaderOffset() + int64(offset))
 		if err != nil {
 			return nil, err
 		}
@@ -126,7 +126,7 @@ func readRawData(file *File, count uint32, bytesInElement uint32) ([]byte, error
 	return rawData, err
 }
 
-func asciiStringReader(file *File, count uint32) (interface{}, []byte, error) {
+func asciiStringReader(file File, count uint32) (interface{}, []byte, error) {
 	rawData, err := readRawData(file, count, 1)
 	if err != nil {
 		return nil, nil, err
@@ -137,7 +137,7 @@ func asciiStringReader(file *File, count uint32) (interface{}, []byte, error) {
 	return strings.TrimSpace(string(rawData)), rawData, nil
 }
 
-func unsignedByteReader(file *File, count uint32) (interface{}, []byte, error) {
+func unsignedByteReader(file File, count uint32) (interface{}, []byte, error) {
 	rawData, err := readRawData(file, count, 1)
 	if err != nil {
 		return nil, nil, err
@@ -145,33 +145,33 @@ func unsignedByteReader(file *File, count uint32) (interface{}, []byte, error) {
 	return rawData, rawData, nil
 }
 
-func signedByteReader(file *File, count uint32) (interface{}, []byte, error) {
+func signedByteReader(file File, count uint32) (interface{}, []byte, error) {
 	rawData, err := readRawData(file, count, 1)
 	if err != nil {
 		return nil, nil, err
 	}
 	signedBytes := make([]int8, count)
-	err = binary.Read(bytes.NewReader(rawData), file.Order, &signedBytes)
+	err = binary.Read(bytes.NewReader(rawData), file.getByteOrder(), &signedBytes)
 	if err != nil {
 		return nil, nil, err
 	}
 	return signedBytes, rawData, nil
 }
 
-func unsignedShortReader(file *File, count uint32) (interface{}, []byte, error) {
+func unsignedShortReader(file File, count uint32) (interface{}, []byte, error) {
 	rawData, err := readRawData(file, count, 2)
 	if err != nil {
 		return nil, nil, err
 	}
 	shorts := make([]uint16, count)
-	err = binary.Read(bytes.NewReader(rawData), file.Order, &shorts)
+	err = binary.Read(bytes.NewReader(rawData), file.getByteOrder(), &shorts)
 	if err != nil {
 		return nil, nil, err
 	}
 	return shorts, rawData, nil
 }
 
-func undefinedReader(file *File, count uint32) (interface{}, []byte, error) {
+func undefinedReader(file File, count uint32) (interface{}, []byte, error) {
 	rawData, err := readRawData(file, count, 1)
 	if err != nil {
 		return nil, nil, err
@@ -179,52 +179,52 @@ func undefinedReader(file *File, count uint32) (interface{}, []byte, error) {
 	return rawData, rawData, nil
 }
 
-func signedShortReader(file *File, count uint32) (interface{}, []byte, error) {
+func signedShortReader(file File, count uint32) (interface{}, []byte, error) {
 	rawData, err := readRawData(file, count, 2)
 	if err != nil {
 		return nil, nil, err
 	}
 	shorts := make([]int16, count)
-	err = binary.Read(bytes.NewReader(rawData), file.Order, &shorts)
+	err = binary.Read(bytes.NewReader(rawData), file.getByteOrder(), &shorts)
 	if err != nil {
 		return nil, nil, err
 	}
 	return shorts, rawData, nil
 }
 
-func unsignedLongReader(file *File, count uint32) (interface{}, []byte, error) {
+func unsignedLongReader(file File, count uint32) (interface{}, []byte, error) {
 	rawData, err := readRawData(file, count, 4)
 	if err != nil {
 		return nil, nil, err
 	}
 	longs := make([]uint32, count)
-	err = binary.Read(bytes.NewReader(rawData), file.Order, &longs)
+	err = binary.Read(bytes.NewReader(rawData), file.getByteOrder(), &longs)
 	if err != nil {
 		return nil, nil, err
 	}
 	return longs, rawData, nil
 }
 
-func signedLongReader(file *File, count uint32) (interface{}, []byte, error) {
+func signedLongReader(file File, count uint32) (interface{}, []byte, error) {
 	rawData, err := readRawData(file, count, 4)
 	if err != nil {
 		return nil, nil, err
 	}
 	longs := make([]int32, count)
-	err = binary.Read(bytes.NewReader(rawData), file.Order, &longs)
+	err = binary.Read(bytes.NewReader(rawData), file.getByteOrder(), &longs)
 	if err != nil {
 		return nil, nil, err
 	}
 	return longs, rawData, nil
 }
 
-func unsignedRationalReader(file *File, count uint32) (interface{}, []byte, error) {
+func unsignedRationalReader(file File, count uint32) (interface{}, []byte, error) {
 	rawData, err := readRawData(file, count, 8)
 	if err != nil {
 		return nil, nil, err
 	}
 	longs := make([]uint32, count*2)
-	err = binary.Read(bytes.NewReader(rawData), file.Order, &longs)
+	err = binary.Read(bytes.NewReader(rawData), file.getByteOrder(), &longs)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -235,13 +235,13 @@ func unsignedRationalReader(file *File, count uint32) (interface{}, []byte, erro
 	return rationals, rawData, nil
 }
 
-func signedRationalReader(file *File, count uint32) (interface{}, []byte, error) {
+func signedRationalReader(file File, count uint32) (interface{}, []byte, error) {
 	rawData, err := readRawData(file, count, 8)
 	if err != nil {
 		return nil, nil, err
 	}
 	longs := make([]int32, count*2)
-	err = binary.Read(bytes.NewReader(rawData), file.Order, &longs)
+	err = binary.Read(bytes.NewReader(rawData), file.getByteOrder(), &longs)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -252,33 +252,33 @@ func signedRationalReader(file *File, count uint32) (interface{}, []byte, error)
 	return rationals, rawData, nil
 }
 
-func float64Reader(file *File, count uint32) (interface{}, []byte, error) {
+func float64Reader(file File, count uint32) (interface{}, []byte, error) {
 	rawData, err := readRawData(file, count, 8)
 	if err != nil {
 		return nil, nil, err
 	}
 	floats := make([]float64, count)
-	err = binary.Read(bytes.NewReader(rawData), file.Order, &floats)
+	err = binary.Read(bytes.NewReader(rawData), file.getByteOrder(), &floats)
 	if err != nil {
 		return nil, nil, err
 	}
 	return floats, rawData, nil
 }
 
-func float32Reader(file *File, count uint32) (interface{}, []byte, error) {
+func float32Reader(file File, count uint32) (interface{}, []byte, error) {
 	rawData, err := readRawData(file, count, 4)
 	if err != nil {
 		return nil, nil, err
 	}
 	floats := make([]float32, count)
-	err = binary.Read(bytes.NewReader(rawData), file.Order, &floats)
+	err = binary.Read(bytes.NewReader(rawData), file.getByteOrder(), &floats)
 	if err != nil {
 		return nil, nil, err
 	}
 	return floats, rawData, nil
 }
 
-func readMarker(file *File) (*marker, error) {
+func readMarker(file File) (*marker, error) {
 	markerID, err := file.readUint16()
 	if err != nil {
 		return nil, err
@@ -298,7 +298,7 @@ func readMarker(file *File) (*marker, error) {
 	}, nil
 }
 
-func readIfdEntry(file *File) (*ifdEntry, error) {
+func readIfdEntry(file File) (*ifdEntry, error) {
 	var tagNumber uint16
 	err := file.Read(&tagNumber)
 	if err != nil {
@@ -338,14 +338,14 @@ func readIfdEntry(file *File) (*ifdEntry, error) {
 	return &ifdEntry{ComponentCount: numComponents, TagID: tagNumber, DataType: dataFormat, Data: dataValue, Value: value, ValueBytes: rawData}, nil
 }
 
-func readIfd(file *File, offset int64, ifdIndex int) (*ifd, error) {
+func readIfd(file File, offset int64, ifdIndex int) (*ifd, error) {
 	if offset > 0 {
 		pos, err := file.currentPosition()
 		if err != nil {
 			return nil, err
 		}
 		defer func() { file.seek(pos) }()
-		_, err = file.seek(file.TiffHeaderOffset + offset)
+		_, err = file.seek(file.GetTiffHeaderOffset() + offset)
 		if err != nil {
 			return nil, err
 		}
@@ -378,7 +378,7 @@ func entryToTag(parents []uint16, entry ifdEntry) Tag {
 	}
 }
 
-func entriesToTags(parentIDs []uint16, file *File, entries []ifdEntry) (Tags, error) {
+func entriesToTags(parentIDs []uint16, file File, entries []ifdEntry) (Tags, error) {
 	tags := make([]Tag, 0)
 	for _, entry := range entries {
 		if entry.TagID == exifTagID {
@@ -417,7 +417,7 @@ func entriesToTags(parentIDs []uint16, file *File, entries []ifdEntry) (Tags, er
 	return tags, nil
 }
 
-func readExifHeader(file *File, marker *marker) error {
+func readExifHeader(file File, marker *marker) error {
 	// check headers
 	file.seek(marker.Offset)
 	// examine exif header
@@ -447,13 +447,13 @@ func readExifHeader(file *File, marker *marker) error {
 		return err
 	}
 
-	file.TiffHeaderOffset = tiffHeaderOffset
+	file.SetTiffHeaderOffset(tiffHeaderOffset)
 
 	// we're at IFD0 and can start reading IFDs
 	return nil
 }
 
-func readIfds(file *File) ([]ifd, error) {
+func readIfds(file File) ([]ifd, error) {
 	result := make([]ifd, 0)
 	index := 0
 	for {
@@ -469,7 +469,7 @@ func readIfds(file *File) ([]ifd, error) {
 		if offset == 0 {
 			return result, nil
 		}
-		_, err = file.seek(file.TiffHeaderOffset + int64(offset))
+		_, err = file.seek(file.GetTiffHeaderOffset() + int64(offset))
 		if err != nil { // most likely we're seeked past EOF
 			return result, nil
 		}
@@ -477,7 +477,7 @@ func readIfds(file *File) ([]ifd, error) {
 	}
 }
 
-func readTiffHeader(file *File) error {
+func readTiffHeader(file File) error {
 	// examine TIFF header
 
 	var wword uint32
@@ -486,9 +486,9 @@ func readTiffHeader(file *File) error {
 		return err
 	}
 	if wword == 0x49492A00 {
-		file.Order = binary.LittleEndian
+		file.SetOrder(LittleEndian)
 	} else if wword == 0x4d4d002A {
-		file.Order = binary.BigEndian
+		file.SetOrder(BigEndian)
 	} else {
 		return fmt.Errorf("Invalid byte order in TIFF header %x", wword)
 	}
@@ -504,7 +504,7 @@ func readTiffHeader(file *File) error {
 }
 
 // ReadExifTags parses file, extracts Ifds from it and parses ifds for all tags
-func ReadExifTags(file *File) (Tags, error) {
+func ReadExifTags(file File) (Tags, error) {
 	// find exif marker in the file
 	var marker *marker
 	var err error
@@ -523,7 +523,7 @@ func ReadExifTags(file *File) (Tags, error) {
 		}
 	}
 	if marker.Marker != exifDataMarker {
-		return nil, fmt.Errorf("Cannot find exif data in %s", file.Path)
+		return nil, fmt.Errorf("Cannot find exif data in %s", file.GetPath())
 	}
 	err = readExifHeader(file, marker)
 	if err != nil {

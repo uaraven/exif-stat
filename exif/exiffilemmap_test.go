@@ -4,8 +4,8 @@ import (
 	"testing"
 )
 
-func TestReadingExifFile(t *testing.T) {
-	file, err := OpenExifFile("../test-data/scan/DSC_0352.jpg")
+func TestReadingExifFileMMap(t *testing.T) {
+	file, err := OpenExifFileMMap("../test-data/scan/DSC_0352.jpg")
 	if err != nil {
 		t.Fatalf("Failed to open file: %v", err)
 	}
@@ -38,8 +38,8 @@ func TestReadingExifFile(t *testing.T) {
 	}
 }
 
-func TestReadingFileWithoutExif(t *testing.T) {
-	file, err := OpenExifFile("../test-data/fail/stack.jpg")
+func TestReadingFileWithoutExifMMap(t *testing.T) {
+	file, err := OpenExifFileMMap("../test-data/fail/stack.jpg")
 	if err != nil {
 		t.Fatalf("Failed to open file: %v", err)
 	}
@@ -54,17 +54,19 @@ func TestReadingFileWithoutExif(t *testing.T) {
 	}
 }
 
-func TestReadingNonExistingFile(t *testing.T) {
-	file, err := OpenExifFile("../test-data/fail/no-file.jpg")
+func TestReadingNonExistingFileMMap(t *testing.T) {
+	file, err := OpenExifFileMMap("../test-data/fail/no-file.jpg")
 	if err == nil {
 		t.Fatalf("Should have failed to open file")
 		return
 	}
-	file.Close()
+	if file != nil {
+		file.Close()
+	}
 }
 
-func TestReadingEmptyFile(t *testing.T) {
-	file, err := OpenExifFile("../test-data/fail/empty.jpg")
+func TestReadingEmptyFileMMap(t *testing.T) {
+	file, err := OpenExifFileMMap("../test-data/fail/empty.jpg")
 	if err == nil {
 		t.Fatalf("Should have failed to open file")
 		return

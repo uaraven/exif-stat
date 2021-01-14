@@ -39,7 +39,7 @@ func TestCameras(t *testing.T) {
 	}
 	for _, camera := range cameras {
 		filepath := "test-data/cameras/" + camera.Image
-		exifInfo, err := ExtractExif(filepath)
+		exifInfo, err := ExtractExif(filepath, false)
 		if err != nil {
 			t.Errorf("Failed to read exif from %s: %v", filepath, err)
 		}

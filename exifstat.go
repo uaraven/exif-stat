@@ -16,6 +16,7 @@ var (
 		} `positional-args:"yes" positional-arg-name:"folder-path" description:"Path to folder with image files" required:"yes"`
 		OutputFile    string `short:"o" long:"output" description:"Name of the output CSV file" default:"exif-stats.csv"`
 		Verbose       bool   `short:"v" long:"verbose" description:"Output more informationm, including warnings"`
+		FastFile      bool   `long:"fast-io" description:"Use memory-mapped io. May be unstable with network paths"`
 		WriteFileName bool   `short:"f" long:"file-name" description:"Include file name in the output"`
 	}{}
 )
@@ -100,7 +101,7 @@ func main() {
 		total = 1 // to avoid div by zero later
 	}
 	for index, image := range images {
-		exif, err := ExtractExif(image)
+		exif, err := ExtractExif(image, options.FastFile)
 		if err != nil {
 			logger.Verbose(1, fmt.Sprintf("\nFailed to extract EXIF from '%s': %s", image, err))
 		} else {

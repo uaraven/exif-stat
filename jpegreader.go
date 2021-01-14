@@ -252,9 +252,14 @@ func parseExifFullTimestamp(timestamp string) (*time.Time, error) {
 }
 
 // ExtractExif parses image file with a given path and extracts exif information
-func ExtractExif(imageFilePath string) (*ExifInfo, error) {
-
-	file, err := exif.OpenExifFile(imageFilePath)
+func ExtractExif(imageFilePath string, mmap bool) (*ExifInfo, error) {
+	var file exif.File
+	var err error
+	if mmap {
+		file, err = exif.OpenExifFileMMap(imageFilePath)
+	} else {
+		file, err = exif.OpenExifFileIo(imageFilePath)
+	}
 	if err != nil {
 		return nil, err
 	}

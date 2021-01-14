@@ -1,9 +1,5 @@
 package exif
 
-import (
-	"encoding/binary"
-)
-
 func nikonV3Detector(data []byte) bool {
 	header := []byte{'N', 'i', 'k', 'o', 'n', 0x00, 0x02, 0x10, 0x00, 0x00}
 	for i, v := range header {
@@ -24,21 +20,21 @@ func nikonV3VariantDetector(data []byte) bool {
 	return true
 }
 
-func nikonV3Reader(file *File, entry ifdEntry) (*ifd, error) {
-	mainTiffHeaderOffset := file.TiffHeaderOffset
-	mainOrder := file.Order
+func nikonV3Reader(file File, entry ifdEntry) (*ifd, error) {
+	mainTiffHeaderOffset := file.GetTiffHeaderOffset()
+	mainOrder := file.GetOrder()
 	defer func() {
-		file.TiffHeaderOffset = mainTiffHeaderOffset
-		file.Order = mainOrder
+		file.SetTiffHeaderOffset(mainTiffHeaderOffset)
+		file.SetOrder(mainOrder)
 	}()
 
-	offset := file.TiffHeaderOffset + int64(entry.Data) + 10 // 10 bytes of nikon signature
+	offset := file.GetTiffHeaderOffset() + int64(entry.Data) + 10 // 10 bytes of nikon signature
 	_, err := file.seek(offset)
 	if err != nil {
 		return nil, err
 	}
-	file.TiffHeaderOffset = offset
-	file.Order = binary.BigEndian
+	file.SetTiffHeaderOffset(offset)
+	file.SetOrder(BigEndian)
 	err = readTiffHeader(file)
 	if err != nil {
 		return nil, err
@@ -48,15 +44,15 @@ func nikonV3Reader(file *File, entry ifdEntry) (*ifd, error) {
 
 type makerNoteReader struct {
 	CanRead func([]byte) bool
-	Reader  func(*File, ifdEntry) (*ifd, error)
+	Reader  func(File, ifdEntry) (*ifd, error)
 }
 
 var makerNoteReaders = []makerNoteReader{
-	makerNoteReader{nikonV3Detector, nikonV3Reader},
-	makerNoteReader{nikonV3VariantDetector, nikonV3Reader},
+	{nikonV3Detector, nikonV3Reader},
+	{nikonV3VariantDetector, nikonV3Reader},
 }
 
-func readMakerNotes(file *File, entry ifdEntry) (*ifd, error) {
+func readMakerNotes(file File, entry ifdEntry) (*ifd, error) {
 	for _, reader := range makerNoteReaders {
 		if reader.CanRead(entry.ValueBytes) {
 			return reader.Reader(file, entry)
