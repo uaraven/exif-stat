@@ -252,23 +252,35 @@ func parseExifFullTimestamp(timestamp string) (*time.Time, error) {
 }
 
 // ExtractExif parses image file with a given path and extracts exif information
-func ExtractExif(imageFilePath string) (*ExifInfo, error) {
-
-	file, err := exif.OpenExifFile(imageFilePath)
+func ExtractExif(imageFilePath string, mmap bool) (exifInfo *ExifInfo, err error) {
+	exifInfo = &ExifInfo{
+		FileName: imageFilePath,
+	}
+	defer func() {
+		state := recover()
+		if state != nil {
+			logger.Verbose(2, fmt.Sprintf("Faulted while reading %s: %v", imageFilePath, state))
+			exifInfo = nil
+			err = fmt.Errorf("Faulted while reading %s: %v", imageFilePath, state)
+		}
+	}()
+	var f exif.File
+	if mmap {
+		f, err = exif.OpenExifFileMMap(imageFilePath)
+	} else {
+		f, err = exif.OpenExifFileIo(imageFilePath)
+	}
 	if err != nil {
 		return nil, err
 	}
-	defer func() { file.Close() }()
+	defer func() { f.Close() }()
 
-	tags, err := exif.ReadExifTags(file)
+	tags, err := exif.ReadExifTags(f)
 	if err != nil {
 		return nil, err
 	}
 
 	tagMap := exif.TagsAsMap(tags)
-	exifInfo := &ExifInfo{
-		FileName: imageFilePath,
-	}
 
 	for path, extractor := range extractors {
 		tag, ok := tagMap[path]
