@@ -34,8 +34,10 @@ Only standard EXIF tags are parsed. Of the vendor-specific tags only some Nikon 
 | Nikon     | D90      |                                                      |
 | Nikon     | D7000    |                                                      |
 | Nikon     | D750     | Exif IFD does not contain image width or height tags |
+| Nikon     | D4S      |                                                      |
 | Panasonic | DMC-GX1  |                                                      |
 | Panasonic | DMC-GX85 |                                                      |
+| Sony      | NEX-3N   |                                                      |
 | Fujifilm  | X-S10    |                                                      |
 | Canon     | EOS R6   | No `FocalLengthIn35mm` tag present                   |
 

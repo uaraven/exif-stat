@@ -18,6 +18,7 @@ var (
 		Verbose       bool   `short:"v" long:"verbose" description:"Output more informationm, including warnings"`
 		FastFile      bool   `long:"fast-io" description:"Use memory-mapped io. May be unstable with network paths"`
 		WriteFileName bool   `short:"f" long:"file-name" description:"Include file name in the output"`
+		ExtendFlash   bool   `long:"extend-flash" description:"Detailed flash status"`
 	}{}
 )
 
@@ -68,6 +69,30 @@ func (ei *ExifInfo) isValidExif() bool {
 	return len(ei.Make) > 0 && len(ei.Model) > 0 && ei.FNumber.Denominator != 0 && ei.ExposureTime.Denominator != 0 && ei.FocalLength.Denominator != 0 && len(ei.CreateTime) > 0
 }
 
+func saveToCsv(outputFile string, exifs chan *ExifInfo) {
+	csv, err := os.Create(outputFile)
+	if err != nil {
+		panic(err)
+	}
+	defer csv.Close()
+	csv.WriteString(csvHeader())
+
+	for exif := range exifs {
+		csv.WriteString(exif.asCsv())
+	}
+}
+
+func exifExtractor(imagePath string, exifs chan *ExifInfo) {
+	exif, err := ExtractExif(imagePath, options.FastFile)
+	if err != nil {
+		logger.Verbose(1, fmt.Sprintf("\nFailed to extract EXIF from '%s': %s", imagePath, err))
+	} else {
+		if exif.isValidExif() {
+			exifs <- exif
+		}
+	}
+}
+
 func main() {
 	_, err := flags.Parse(options)
 
@@ -82,36 +107,15 @@ func main() {
 
 	logger.Verbose(0, fmt.Sprintf("Searching for images in '%s'", options.Args.FolderPath))
 
-	images, err := ListImages(options.Args.FolderPath)
-	if err != nil {
-		panic(err)
-	}
-	logger.Verbose(0, fmt.Sprintf("Found %d image files", len(images)))
+	paths := make(chan string, 50)
+	exifs := make(chan *ExifInfo, 50)
 
-	out, err := os.Create(options.OutputFile)
-	if err != nil {
-		panic(err)
-	}
-	defer out.Close()
-	out.WriteString(csvHeader())
+	go ListImages(options.Args.FolderPath, paths)
+	go saveToCsv(options.OutputFile, exifs)
 
 	logger.Info(fmt.Sprintf("Writing data to '%s'", options.OutputFile))
-	total := len(images)
-	if total == 0 {
-		total = 1 // to avoid div by zero later
-	}
-	for index, image := range images {
-		exif, err := ExtractExif(image, options.FastFile)
-		if err != nil {
-			logger.Verbose(1, fmt.Sprintf("\nFailed to extract EXIF from '%s': %s", image, err))
-		} else {
-			if exif.isValidExif() {
-				out.WriteString(exif.asCsv())
-			}
-			if index%100 == 0 { // update status every 100 images
-				fmt.Printf("%.1f%% %s\x1b[0K\r", float64(index)*100.0/float64(total), image)
-			}
-		}
+	for imagePath := range paths {
+		go exifExtractor(imagePath, exifs)
 	}
 	fmt.Println("100% Done\x1b[0K")
 }

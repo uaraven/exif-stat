@@ -6,7 +6,8 @@ import (
 
 // TestListImages tests ligst images
 func TestListImages(t *testing.T) {
-	images, err := ListImages("test-data/scan")
+	paths := make(chan string)
+	err := ListImages("test-data/scan", paths)
 	if err != nil {
 		t.Errorf("ListImages returned error %s", err)
 	}
@@ -20,7 +21,7 @@ func TestListImages(t *testing.T) {
 		"test-data/scan/subdir/triple-nested/P1030129.jpeg": true,
 	}
 
-	for _, image := range images {
+	for image := range paths {
 		_, ok := expected[image]
 		if !ok {
 			t.Errorf("Image '%s' was expected but not found", image)

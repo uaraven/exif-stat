@@ -10,7 +10,7 @@
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}",
-            "args": ["-s", "test-data"]
+            "args": ["-v", "test-data"]
         },
         {
             "name": "Launch test package",
