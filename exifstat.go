@@ -18,6 +18,7 @@ var (
 		Verbose       bool   `short:"v" long:"verbose" description:"Output more informationm, including warnings"`
 		FastFile      bool   `long:"fast-io" description:"Use memory-mapped io. May be unstable with network paths"`
 		WriteFileName bool   `short:"f" long:"file-name" description:"Include file name in the output"`
+		ExtendFlash   bool   `long:"extend-flash" description:"Detailed flash status"`
 	}{}
 )
 

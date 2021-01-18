@@ -114,6 +114,36 @@ var exifFlashValues = map[uint]string{
 	0x5f: "Auto, Fired, Red-eye reduction, Return detected",
 }
 
+var exifSimplifiedFlashValues = map[uint]string{
+	0x0:  "Off",
+	0x1:  "On",
+	0x5:  "On",
+	0x7:  "On",
+	0x8:  "On",
+	0x9:  "On",
+	0xd:  "On",
+	0xf:  "On",
+	0x10: "Off",
+	0x14: "Off",
+	0x18: "Off",
+	0x19: "On",
+	0x1d: "On",
+	0x1f: "On",
+	0x20: "Off",
+	0x30: "Off",
+	0x41: "On",
+	0x45: "On",
+	0x47: "On",
+	0x49: "On",
+	0x4d: "On",
+	0x4f: "On",
+	0x50: "Off",
+	0x58: "Off",
+	0x59: "On",
+	0x5d: "On",
+	0x5f: "On",
+}
+
 var exifExposurePrograms = map[uint]string{
 	0: "Not Defined",
 	1: "Manual",
@@ -158,7 +188,14 @@ var extractors = map[string]tagValueExtractor{
 		exifInfo.FocalLength35 = tag.Value.([]uint16)[0]
 	},
 	tagFlash: func(tag exif.Tag, exifInfo *ExifInfo) {
-		val, ok := exifFlashValues[uint(tag.Value.([]uint16)[0])]
+		var values map[uint]string
+		if options.ExtendFlash {
+			values = exifFlashValues
+		} else {
+			values = exifSimplifiedFlashValues
+		}
+
+		val, ok := values[uint(tag.Value.([]uint16)[0])]
 		if ok {
 			exifInfo.Flash = val
 		}
