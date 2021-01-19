@@ -20,19 +20,19 @@ func isSupportedFile(path string) bool {
 }
 
 // ListImages lists all the supported images in given path. includes images in subdirectories
-func ListImages(path string, paths chan string) error {
-	defer func() { close(paths) }()
+func ListImages(path string) ([]string, error) {
+	paths := make([]string, 0)
 	err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
 		if info.IsDir() {
 			fmt.Printf("%s%s\r", utils.Shorten(path), utils.ClearLine)
-		}
-		if !info.IsDir() && isSupportedFile(path) && filepath.Base(path)[0] != '.' {
-			paths <- path
+		} else if !info.IsDir() && isSupportedFile(path) && filepath.Base(path)[0] != '.' {
+			stats.filesFound++
+			paths = append(paths, path)
 		}
 		return nil
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return paths, nil
 }
