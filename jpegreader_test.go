@@ -37,6 +37,7 @@ func TestCameras(t *testing.T) {
 		t.Logf("Failed to parse cameras.json")
 		t.FailNow()
 	}
+	options.ExtendFlash = true
 	for _, camera := range cameras {
 		filepath := "test-data/cameras/" + camera.Image
 		exifInfo, err := ExtractExif(filepath, false)
