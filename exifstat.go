@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/jessevdk/go-flags"
 	"github.com/uaraven/exif-stat/logger"
@@ -69,6 +70,34 @@ func (ei *ExifInfo) isValidExif() bool {
 	return len(ei.Make) > 0 && len(ei.Model) > 0 && ei.FNumber.Denominator != 0 && ei.ExposureTime.Denominator != 0 && ei.FocalLength.Denominator != 0 && len(ei.CreateTime) > 0
 }
 
+func parseExif(wg *sync.WaitGroup, paths chan string, exifs chan *ExifInfo) {
+	defer close(exifs)
+	defer wg.Done()
+	for path := range paths {
+		exif, err := ExtractExif(path, options.FastFile)
+		if err == nil {
+			exifs <- exif
+		} else {
+			logger.Verbose(1, fmt.Sprintf("\nFailed to extract EXIF from '%s': %s", path, err))
+		}
+	}
+}
+
+func writeCsv(wg *sync.WaitGroup, exifs chan *ExifInfo) {
+	defer wg.Done()
+	out, err := os.Create(options.OutputFile)
+	if err != nil {
+		panic(err)
+	}
+	defer out.Close()
+	out.WriteString(csvHeader())
+	for exif := range exifs {
+		if exif.isValidExif() {
+			out.WriteString(exif.asCsv())
+		}
+	}
+}
+
 func main() {
 	_, err := flags.Parse(options)
 
@@ -81,37 +110,16 @@ func main() {
 		logger.SetVerbosityLevel(0)
 	}
 
-	logger.Verbose(0, fmt.Sprintf("Searching for images in '%s'", options.Args.FolderPath))
-	images, err := ListImages(options.Args.FolderPath)
-	if err != nil {
-		panic(err)
-	}
-	logger.Verbose(0, fmt.Sprintf("Found %d image files", len(images)))
+	var wg sync.WaitGroup
+	paths := make(chan string)
+	exifs := make(chan *ExifInfo)
 
-	out, err := os.Create(options.OutputFile)
-	if err != nil {
-		panic(err)
-	}
-	defer out.Close()
-	out.WriteString(csvHeader())
+	wg.Add(3)
+	go ListImages(options.Args.FolderPath, &wg, paths)
+	go parseExif(&wg, paths, exifs)
+	go writeCsv(&wg, exifs)
 
-	logger.Info(fmt.Sprintf("Writing data to '%s'", options.OutputFile))
-	total := len(images)
-	if total == 0 {
-		total = 1 // to avoid div by zero later
-	}
-	for index, image := range images {
-		exif, err := ExtractExif(image, options.FastFile)
-		if err != nil {
-			logger.Verbose(1, fmt.Sprintf("\nFailed to extract EXIF from '%s': %s", image, err))
-		} else {
-			if exif.isValidExif() {
-				out.WriteString(exif.asCsv())
-			}
-			if index%100 == 0 { // update status every 100 images
-				fmt.Printf("%.1f%% %s\x1b[0K\r", float64(index)*100.0/float64(total), image)
-			}
-		}
-	}
-	fmt.Println("100% Done\x1b[0K")
+	wg.Wait()
+
+	fmt.Println("\n100% Done\x1b[0K")
 }
