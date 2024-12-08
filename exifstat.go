@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 
@@ -20,6 +21,7 @@ var (
 		FastFile      bool   `long:"fast-io" description:"Use memory-mapped io. May be unstable with network paths"`
 		WriteFileName bool   `short:"f" long:"file-name" description:"Include file name in the output"`
 		ExtendFlash   bool   `long:"extend-flash" description:"Detailed flash status"`
+		Name          string `short:"n" long:"name" description:"Include only file with matching name"`
 	}{}
 )
 
@@ -66,15 +68,27 @@ func (ei *ExifInfo) asCsv() string {
 	return sb.String()
 }
 
-func (ei *ExifInfo) isValidExif() bool {
-	return len(ei.Make) > 0 && len(ei.Model) > 0 && ei.FNumber.Denominator != 0 && ei.ExposureTime.Denominator != 0 && ei.FocalLength.Denominator != 0 && len(ei.CreateTime) > 0
+func extractExif(path string, fastIo bool) (*ExifInfo, error) {
+	ext := strings.ToLower(filepath.Ext(path))
+	var reader ExifFileReader
+	if ext == ".jpg" || ext == ".jpeg" {
+		reader = NewJpegReader(path, fastIo)
+	} else if ext == ".raf" {
+		reader = NewRafReader(path, fastIo)
+	} else if ext == ".arw" {
+		reader = NewArwReader(path, fastIo)
+	} else {
+		return nil, fmt.Errorf("unsupported file: %s", path)
+	}
+	return reader.ReadExif()
+
 }
 
 func parseExif(wg *sync.WaitGroup, paths chan string, exifs chan *ExifInfo) {
 	defer close(exifs)
 	defer wg.Done()
 	for path := range paths {
-		exif, err := ExtractExif(path, options.FastFile)
+		exif, err := extractExif(path, options.FastFile)
 		if err == nil {
 			exifs <- exif
 		} else {
@@ -92,7 +106,7 @@ func writeCsv(wg *sync.WaitGroup, exifs chan *ExifInfo) {
 	defer out.Close()
 	out.WriteString(csvHeader())
 	for exif := range exifs {
-		if exif.isValidExif() {
+		if exif.IsValidExif() {
 			out.WriteString(exif.asCsv())
 		}
 	}
@@ -115,7 +129,7 @@ func main() {
 	exifs := make(chan *ExifInfo)
 
 	wg.Add(3)
-	go ListImages(options.Args.FolderPath, &wg, paths)
+	go ListImages(options.Args.FolderPath, options.Name, &wg, paths)
 	go parseExif(&wg, paths, exifs)
 	go writeCsv(&wg, exifs)
 

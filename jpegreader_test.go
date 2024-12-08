@@ -44,6 +44,6 @@ func TestCameras(t *testing.T) {
 		if err != nil {
 			t.Errorf("Failed to read exif from %s: %v", filepath, err)
 		}
-		compareExifMaps(t, camera.Camera, camera.Exif, exifInfo.toMap())
+		compareExifMaps(t, camera.Camera, camera.Exif, exifInfo.ToMap())
 	}
 }

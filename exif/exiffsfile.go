@@ -38,15 +38,11 @@ func OpenExifFileIo(filepath string) (file File, err error) {
 		File:  f,
 		Order: BigEndian,
 	}
-	word, err := file.readUint16()
-	if word != 0xFFD8 {
-		return nil, fmt.Errorf("Not a JPEG file? %s", filepath)
-	}
 
 	return file, nil
 }
 
-func (file imageFileFs) readUint16() (uint16, error) {
+func (file imageFileFs) ReadUint16() (uint16, error) {
 	var word uint16
 	err := binary.Read(file.File, file.getByteOrder(), &word)
 	if err != nil {
@@ -55,7 +51,7 @@ func (file imageFileFs) readUint16() (uint16, error) {
 	return word, nil
 }
 
-func (file imageFileFs) readUint32() (uint32, error) {
+func (file imageFileFs) ReadUint32() (uint32, error) {
 	var word uint32
 	err := binary.Read(file.File, file.getByteOrder(), &word)
 	if err != nil {
@@ -77,7 +73,7 @@ func (file imageFileFs) currentPosition() (int64, error) {
 	return file.File.Seek(0, os.SEEK_CUR)
 }
 
-func (file imageFileFs) seek(pos int64) (int64, error) {
+func (file imageFileFs) Seek(pos int64) (int64, error) {
 	return file.File.Seek(pos, os.SEEK_SET)
 }
 

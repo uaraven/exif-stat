@@ -29,7 +29,7 @@ const (
 	// ExifDataMarker is an identifier of Exif Data marker
 	exifDataMarker = 0xFFE1
 	eoiDataMarker  = 0xFFD9
-	sosDataMarker  = 0xFFDA // star of stream marker
+	sosDataMarker  = 0xFFDA // start of stream marker
 
 	exifTagID       = 0x8769
 	makerNotesTagID = 0x927c
@@ -116,11 +116,11 @@ func readRawData(file File, count uint32, bytesInElement uint32) ([]byte, error)
 		if err != nil {
 			return nil, err
 		}
-		_, err = file.seek(file.GetTiffHeaderOffset() + int64(offset))
+		_, err = file.Seek(file.GetTiffHeaderOffset() + int64(offset))
 		if err != nil {
 			return nil, err
 		}
-		defer func() { file.seek(pos) }()
+		defer func() { file.Seek(pos) }()
 	}
 	err = file.Read(rawData)
 	return rawData, err
@@ -279,11 +279,11 @@ func float32Reader(file File, count uint32) (interface{}, []byte, error) {
 }
 
 func readMarker(file File) (*marker, error) {
-	markerID, err := file.readUint16()
+	markerID, err := file.ReadUint16()
 	if err != nil {
 		return nil, err
 	}
-	size, err := file.readUint16()
+	size, err := file.ReadUint16()
 	if err != nil {
 		return nil, err
 	}
@@ -320,7 +320,7 @@ func readIfdEntry(file File) (*ifdEntry, error) {
 		return nil, err
 	}
 
-	// read data field and seek back so that dataformat reader can read it again
+	// read data field and Seek back so that dataformat reader can read it again
 	var dataValue uint32
 	err = file.Read(&dataValue)
 	if err != nil {
@@ -344,8 +344,8 @@ func readIfd(file File, offset int64, ifdIndex int) (*ifd, error) {
 		if err != nil {
 			return nil, err
 		}
-		defer func() { file.seek(pos) }()
-		_, err = file.seek(file.GetTiffHeaderOffset() + offset)
+		defer func() { file.Seek(pos) }()
+		_, err = file.Seek(file.GetTiffHeaderOffset() + offset)
 		if err != nil {
 			return nil, err
 		}
@@ -419,7 +419,7 @@ func entriesToTags(parentIDs []uint16, file File, entries []ifdEntry) (Tags, err
 
 func readExifHeader(file File, marker *marker) error {
 	// check headers
-	file.seek(marker.Offset)
+	file.Seek(marker.Offset)
 	// examine exif header
 	var exifMagic uint32
 	err := file.Read(&exifMagic)
@@ -462,14 +462,14 @@ func readIfds(file File) ([]ifd, error) {
 			return result, err
 		}
 		result = append(result, *ifd)
-		offset, err := file.readUint32() // read offset to next IFD
+		offset, err := file.ReadUint32() // read offset to next IFD
 		if err != nil {
 			return result, err
 		}
 		if offset == 0 {
 			return result, nil
 		}
-		_, err = file.seek(file.GetTiffHeaderOffset() + int64(offset))
+		_, err = file.Seek(file.GetTiffHeaderOffset() + int64(offset))
 		if err != nil { // most likely we're seeked past EOF
 			return result, nil
 		}
@@ -503,6 +503,21 @@ func readTiffHeader(file File) error {
 	return nil
 }
 
+func ReadTiffTags(file File) (Tags, error) {
+	err := readTiffHeader(file)
+	if err != nil {
+		return nil, err
+	}
+
+	ifds, err := readIfds(file)
+	if err != nil {
+		return nil, err
+	}
+
+	parent := make([]uint16, 0)
+	return entriesToTags(parent, file, ifds[0].IfdEntries) // we're ignoring any IFD except for IFD0 for now
+}
+
 // ReadExifTags parses file, extracts Ifds from it and parses ifds for all tags
 func ReadExifTags(file File) (Tags, error) {
 	// find exif marker in the file
@@ -519,11 +534,14 @@ func ReadExifTags(file File) (Tags, error) {
 			// file does not contain proper exif
 			return make(Tags, 0), nil
 		} else {
-			file.seekRelative(int64(marker.Size - 2))
+			_, err = file.seekRelative(int64(marker.Size - 2))
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 	if marker.Marker != exifDataMarker {
-		return nil, fmt.Errorf("Cannot find exif data in %s", file.GetPath())
+		return nil, fmt.Errorf("cannot find exif data in %s", file.GetPath())
 	}
 	err = readExifHeader(file, marker)
 	if err != nil {

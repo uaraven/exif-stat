@@ -50,7 +50,7 @@ func OpenExifFileMMap(filepath string) (file File, err error) {
 		Reader: reader,
 		Order:  BigEndian,
 	}
-	word, err := file.readUint16()
+	word, err := file.ReadUint16()
 	if word != 0xFFD8 {
 		return nil, fmt.Errorf("Not a JPEG file? %s", filepath)
 	}
@@ -58,7 +58,7 @@ func OpenExifFileMMap(filepath string) (file File, err error) {
 	return file, nil
 }
 
-func (file imageFileMmap) readUint16() (uint16, error) {
+func (file imageFileMmap) ReadUint16() (uint16, error) {
 	var word uint16
 	err := binary.Read(file.Reader, file.getByteOrder(), &word)
 	if err != nil {
@@ -67,7 +67,7 @@ func (file imageFileMmap) readUint16() (uint16, error) {
 	return word, nil
 }
 
-func (file imageFileMmap) readUint32() (uint32, error) {
+func (file imageFileMmap) ReadUint32() (uint32, error) {
 	var word uint32
 	err := binary.Read(file.Reader, file.getByteOrder(), &word)
 	if err != nil {
@@ -89,7 +89,7 @@ func (file imageFileMmap) currentPosition() (int64, error) {
 	return file.Reader.Seek(0, io.SeekCurrent)
 }
 
-func (file imageFileMmap) seek(pos int64) (int64, error) {
+func (file imageFileMmap) Seek(pos int64) (int64, error) {
 	return file.Reader.Seek(pos, io.SeekStart)
 }
 

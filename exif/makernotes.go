@@ -29,7 +29,7 @@ func nikonV3Reader(file File, entry ifdEntry) (*ifd, error) {
 	}()
 
 	offset := file.GetTiffHeaderOffset() + int64(entry.Data) + 10 // 10 bytes of nikon signature
-	_, err := file.seek(offset)
+	_, err := file.Seek(offset)
 	if err != nil {
 		return nil, err
 	}
