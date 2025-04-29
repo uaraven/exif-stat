@@ -23,6 +23,9 @@ var (
 	exposureProgram      = "8769/8822"
 	exposureCompensation = "8769/9204"
 	nikonIso             = "8769/927c/0002"
+	lensInfo             = "8769/a432"
+	lensMake             = "8769/a433"
+	lensModel            = "8769/a434"
 )
 
 const (
@@ -79,6 +82,9 @@ var tagNames = map[string]string{
 	exposureProgram:      "Exposure Program",
 	exposureCompensation: "Exposure Compensation",
 	nikonIso:             "ISO",
+	lensInfo:             "Lens Info",
+	lensMake:             "Make",
+	lensModel:            "Model",
 }
 
 type tagReader func(file File, count uint32) (interface{}, []byte, error)
@@ -229,7 +235,7 @@ func unsignedRationalReader(file File, count uint32) (interface{}, []byte, error
 		return nil, nil, err
 	}
 	rationals := make([]Rational, count)
-	for index := uint32(0); index < count; index += 2 {
+	for index := uint32(0); index < count*2; index += 2 {
 		rationals[index/2] = NewRational(longs[index], longs[index+1])
 	}
 	return rationals, rawData, nil
@@ -246,7 +252,7 @@ func signedRationalReader(file File, count uint32) (interface{}, []byte, error) 
 		return nil, nil, err
 	}
 	rationals := make([]SignedRational, count)
-	for index := uint32(0); index < count; index += 2 {
+	for index := uint32(0); index < count*2; index += 2 {
 		rationals[index/2] = NewSignedRational(longs[index], longs[index+1])
 	}
 	return rationals, rawData, nil

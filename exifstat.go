@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 	"sync"
 
@@ -38,6 +37,9 @@ func csvHeader() string {
 	sb.WriteString(",ExpComp")
 	sb.WriteString(",Flash")
 	sb.WriteString(",ExposureProgram")
+	sb.WriteString(",LensInfo")
+	sb.WriteString(",LensMake")
+	sb.WriteString(",LensModel")
 	sb.WriteString(",MPix")
 	if options.WriteFileName {
 		sb.WriteString(",FileName")
@@ -59,6 +61,9 @@ func (ei *ExifInfo) asCsv() string {
 	sb.WriteString(fmt.Sprintf(",\"%s\"", ei.ExposureCompensation.Normalize().ToString()))
 	sb.WriteString(fmt.Sprintf(",\"%s\"", ei.Flash))
 	sb.WriteString(fmt.Sprintf(",\"%s\"", ei.ExposureProgram))
+	sb.WriteString(fmt.Sprintf(",\"%s\"", ei.LensInfo))
+	sb.WriteString(fmt.Sprintf(",\"%s\"", ei.LensMake))
+	sb.WriteString(fmt.Sprintf(",\"%s\"", ei.LensModel))
 	mpix := float64(ei.Width*ei.Height) / 1000000.0
 	sb.WriteString(fmt.Sprintf(",\"%.1f\"", mpix))
 	if options.WriteFileName {
@@ -69,16 +74,9 @@ func (ei *ExifInfo) asCsv() string {
 }
 
 func extractExif(path string, fastIo bool) (*ExifInfo, error) {
-	ext := strings.ToLower(filepath.Ext(path))
-	var reader ExifFileReader
-	if ext == ".jpg" || ext == ".jpeg" {
-		reader = NewJpegReader(path, fastIo)
-	} else if ext == ".raf" {
-		reader = NewRafReader(path, fastIo)
-	} else if ext == ".arw" {
-		reader = NewArwReader(path, fastIo)
-	} else {
-		return nil, fmt.Errorf("unsupported file: %s", path)
+	reader, err := GetReaderForFileName(path, fastIo)
+	if err != nil {
+		return nil, err
 	}
 	return reader.ReadExif()
 

@@ -23,6 +23,9 @@ type ExifInfo struct {
 	Flash                string
 	ExposureProgram      string
 	ExposureCompensation exif.SignedRational
+	LensModel            string
+	LensMake             string
+	LensInfo             string
 	Width                uint32
 	Height               uint32
 	FileName             string
@@ -86,6 +89,9 @@ const (
 	tagImageHeight          = "8769/a003"
 	tagExposureMore         = "8769/a402"
 	tagNikonIso             = "8769/927c/0002"
+	tagLensInfo             = "8769/a432"
+	tagLensMake             = "8769/a433"
+	tagLensModel            = "8769/a434"
 )
 
 var exifFlashValues = map[uint]string{
@@ -231,6 +237,31 @@ var extractors = map[string]tagValueExtractor{
 			exifInfo.Height = uint32(tag.Value.([]int32)[0])
 		default:
 			exifInfo.Height = uint32(tag.Value.([]uint16)[0])
+		}
+	},
+	tagLensModel: func(tag exif.Tag, exifInfo *ExifInfo) {
+		exifInfo.LensModel = tag.Value.(string)
+	},
+	tagLensMake: func(tag exif.Tag, exifInfo *ExifInfo) {
+		exifInfo.LensMake = tag.Value.(string)
+	},
+	tagLensInfo: func(tag exif.Tag, exifInfo *ExifInfo) {
+		values := tag.Value.([]exif.Rational)
+		if values[0] == values[1] {
+			// prime lens
+			exifInfo.LensInfo = fmt.Sprintf("%smm f/%s", values[0].ToString(), values[2].ToString())
+		} else {
+			// zoom lens
+			if values[2].Numerator == 0 {
+				exifInfo.LensInfo = fmt.Sprintf("%s-%smm",
+					values[0].ToString(), values[1].ToString())
+			} else if values[2] == values[3] {
+				exifInfo.LensInfo = fmt.Sprintf("%s-%smm f/%s",
+					values[0].ToString(), values[1].ToString(), values[2].ToString())
+			} else {
+				exifInfo.LensInfo = fmt.Sprintf("%s-%smm f/%s-%s",
+					values[0].ToString(), values[1].ToString(), values[2].ToString(), values[3].ToString())
+			}
 		}
 	},
 }
