@@ -23,6 +23,8 @@ type ExifInfo struct {
 	Flash                string
 	ExposureProgram      string
 	ExposureCompensation exif.SignedRational
+	LensMake             string
+	LensModel            string
 	Width                uint32
 	Height               uint32
 	FileName             string
@@ -40,6 +42,8 @@ func (ei *ExifInfo) toString() string {
 	sb.WriteString(fmt.Sprintf("Focal length in 35mm: %d\n", ei.FocalLength35))
 	sb.WriteString(fmt.Sprintf("Flash: %s\n", ei.Flash))
 	sb.WriteString(fmt.Sprintf("Exposure program: %s\n", ei.ExposureProgram))
+	sb.WriteString(fmt.Sprintf("Lens make: %s\n", ei.LensMake))
+	sb.WriteString(fmt.Sprintf("Lens model: %s\n", ei.LensModel))
 	return sb.String()
 }
 
@@ -58,6 +62,8 @@ func (ei *ExifInfo) toMap() map[string]interface{} {
 		"ExposureCompensation": ei.ExposureCompensation.Normalize().ToString(),
 		"Width":                ei.Width,
 		"Height":               ei.Height,
+		"LensMake":             ei.LensMake,
+		"LensModel":            ei.LensModel,
 	}
 }
 
@@ -82,6 +88,8 @@ const (
 	tagImageHeight          = "8769/a003"
 	tagExposureMore         = "8769/a402"
 	tagNikonIso             = "8769/927c/0002"
+	tagLensMake             = "8769/a433"
+	tagLensModel            = "8769/a434"
 )
 
 var exifFlashValues = map[uint]string{
@@ -228,6 +236,12 @@ var extractors = map[string]tagValueExtractor{
 		default:
 			exifInfo.Height = uint32(tag.Value.([]uint16)[0])
 		}
+	},
+	tagLensMake: func(tag exif.Tag, exifInfo *ExifInfo) {
+		exifInfo.LensMake = tag.Value.(string)
+	},
+	tagLensModel: func(tag exif.Tag, exifInfo *ExifInfo) {
+		exifInfo.LensModel = tag.Value.(string)
 	},
 }
 

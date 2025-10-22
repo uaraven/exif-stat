@@ -36,6 +36,8 @@ func csvHeader() string {
 	sb.WriteString(",ExpComp")
 	sb.WriteString(",Flash")
 	sb.WriteString(",ExposureProgram")
+	sb.WriteString(",LensMake")
+	sb.WriteString(",LensModel")
 	sb.WriteString(",MPix")
 	if options.WriteFileName {
 		sb.WriteString(",FileName")
@@ -57,6 +59,8 @@ func (ei *ExifInfo) asCsv() string {
 	sb.WriteString(fmt.Sprintf(",\"%s\"", ei.ExposureCompensation.Normalize().ToString()))
 	sb.WriteString(fmt.Sprintf(",\"%s\"", ei.Flash))
 	sb.WriteString(fmt.Sprintf(",\"%s\"", ei.ExposureProgram))
+	sb.WriteString(fmt.Sprintf(",\"%s\"", strings.TrimSpace(ei.LensMake)))
+	sb.WriteString(fmt.Sprintf(",\"%s\"", strings.TrimSpace(ei.LensModel)))
 	mpix := float64(ei.Width*ei.Height) / 1000000.0
 	sb.WriteString(fmt.Sprintf(",\"%.1f\"", mpix))
 	if options.WriteFileName {

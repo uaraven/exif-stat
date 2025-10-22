@@ -23,6 +23,8 @@ var (
 	exposureProgram      = "8769/8822"
 	exposureCompensation = "8769/9204"
 	nikonIso             = "8769/927c/0002"
+	lensMake             = "8769/a433"
+	lensModel            = "8769/a434"
 )
 
 const (
@@ -79,6 +81,8 @@ var tagNames = map[string]string{
 	exposureProgram:      "Exposure Program",
 	exposureCompensation: "Exposure Compensation",
 	nikonIso:             "ISO",
+	lensMake:             "Lens Make",
+	lensModel:            "Lens Model",
 }
 
 type tagReader func(file File, count uint32) (interface{}, []byte, error)
